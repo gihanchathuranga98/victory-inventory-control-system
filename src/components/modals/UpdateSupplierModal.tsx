@@ -44,10 +44,6 @@ const UpdateSupplierModal = ({open=false, data, onCancel, onSave, loadSuppliers}
             key: 'mobile'
         },
         {
-            title: 'Address',
-            dataIndex: 'address',
-            key: 'address'
-        },{
             title: 'Email',
             dataIndex: 'email',
             key: 'email'

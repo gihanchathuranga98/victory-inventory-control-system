@@ -3,5 +3,6 @@ export interface ContactsInterface {
     name: string;
     mobile?: string;
     address?: string;
-    email?: string
+    email?: string;
+    tel?: string;
 }

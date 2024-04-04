@@ -1,10 +1,25 @@
 import Breadcrumb from "../components/Breadcrumb/Breadcrumb";
-import {Button, Card, Col, Form, Modal, Radio, Row, Table} from "antd";
-import Input from "../components/Input/Input";
-import {useEffect, useState} from "react";
+import {Button, Card, Col, Form, Input, Modal, Radio, Row, Table} from "antd";
+import {useContext, useEffect, useState} from "react";
 import {SupplierInterface} from "../models/interfaces/Supplier.interface";
+import SupplierService from "../services/SupplierService";
+import {AlertContext} from "../context/AlertContext";
+import {ContactsInterface} from "../models/interfaces/Contacts.interface";
 
 const SupplierRegistration = () => {
+
+    const supplierService = new SupplierService();
+    const {success, error} = useContext(AlertContext)
+
+    useEffect(() => {
+        // supplierService.getNewSupplierId()
+        //     .then(data => {
+        //
+        //     })
+        //     .catch(err => {
+        //         error('Fetching Id Failed','Unexpected error occurred, Please check your connection')
+        //     })
+    }, []);
 
     const mockSuppliers: SupplierInterface[] = [
         {
@@ -54,23 +69,26 @@ const SupplierRegistration = () => {
 
 
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
-    const [suppliers, setSuppliers] = useState<SupplierInterface[]>([])
-    const [newSupplier, setNewSupplier] = useState<SupplierInterface>()
+    const [contacts, setContacts] = useState<ContactsInterface[]>([]);
+
+    const [regForm] = Form.useForm();
+    const [contactForm] = Form.useForm();
 
     useEffect(() => {
         // get current suppliers
+        regForm.setFieldValue('supplier_id', '478192472192')
     }, []);
 
     const columns = [
         {
             title: 'Contact Name',
-            dataIndex: 'contact_name',
-            key: 'contact_name'
+            dataIndex: 'name',
+            key: 'name'
         },
         {
             title: 'Telephone',
-            dataIndex: 'telephone',
-            key: 'telephone'
+            dataIndex: 'tel',
+            key: 'tel'
         },
         {
             title: 'Mobile',
@@ -81,8 +99,69 @@ const SupplierRegistration = () => {
             title: 'Email',
             dataIndex: 'email',
             key: 'email'
+        },
+        {
+            title: 'Options',
+            dataIndex: 'mobile',
+            key: 'options',
+            render: (value: string) => {
+                return (
+                    <>
+                        <Button onClick={()=>{handleContactRemove(value)}} type={'primary'} danger>Remove</Button>
+                    </>
+                )
+            }
         }
     ]
+
+    const handleContactRemove = (mobile: string) => {
+        setContacts(prevState => {
+            return prevState.filter(contact => {
+                return contact.mobile !== mobile
+            })
+        })
+    }
+
+
+    const handleContactFormSubmit = () => {
+        const contact = contactForm.getFieldsValue();
+        setContacts(prevState => {
+            return prevState.concat([contact]);
+        })
+        contactForm.resetFields();
+        setIsModalOpen(false);
+    }
+
+    const handleRegFormSubmit = async (event:any) => {
+        try {
+            console.log('event', event)
+            const payload: SupplierInterface = {
+                name: event.supplier_name,
+                address: event.address,
+                tel: event.telephone,
+                fax: event.fax,
+                brNo: event.br_number,
+                vatRegNo: event.vat_registration,
+                contacts: contacts
+            }
+
+            console.log('Supplier', payload)
+
+            supplierService.createNewSupplier(payload)
+                .then(data => {
+                    success('Registration Success','Supplier Registered Successfully')
+                    setContacts([]);
+                })
+                .catch(e => {
+                    error('Registration Failed', 'Unexpected error occurred, please try again')
+                })
+        }catch (e) {
+            console.log('error in handleRegFormSubmit', e)
+            error('Registration Failed', 'Something went wrong, Please try again');
+        }finally {
+            regForm.resetFields();
+        }
+    }
 
     return (
         <>
@@ -90,16 +169,27 @@ const SupplierRegistration = () => {
             <Card size={'default'} title={'Supplier Registration'}>
                 <Row gutter={[30,0]}>
                     <Col offset={2} span={6}>
-                        <Form layout={'vertical'}>
-                            <Input name={'supplier_id'} disabled={true} label={'Supplier ID'}/>
-                            <Input name={'supplier_name'} label={'Supplier Name'} rules={[{required: true}]}/>
-                            <Input name={'address'} label={'Address'}/>
-                            <Input name={'telephone'} label={'Telephone'}/>
-                            <Input name={'fax'} label={'Fax'}/>
-                            <Input name={'br_number'} label={'BR Number'}/>
-                            <Input name={'vat_registration'} label={'VAT Registration'}/>
+                        <Form form={regForm} layout={'vertical'} onFinish={handleRegFormSubmit}>
+                            <Form.Item label={'Supplier Name'} name={'supplier_name'} rules={[{required: true}]}>
+                                <Input name={'Supplier Name'}/>
+                            </Form.Item>
+                            <Form.Item rules={[{required: true}]} label={'Address'} name={'address'}>
+                                <Input name={'Address'}/>
+                            </Form.Item>
+                            <Form.Item rules={[{required: false}]} label={'Telephone'} name={'telephone'}>
+                                <Input name={'Telephone'}/>
+                            </Form.Item>
+                            <Form.Item rules={[{required: false}]} label={'Fax'} name={'fax'}>
+                                <Input name={'Fax'}/>
+                            </Form.Item>
+                            <Form.Item rules={[{required: false}]} label={'BR No.'} name={'br_number'}>
+                                <Input name={'BR No.'}/>
+                            </Form.Item>
+                            <Form.Item rules={[{required: false}]} label={'VAT Registration'} name={'vat_registration'}>
+                                <Input name={'VAT Registration'}/>
+                            </Form.Item>
                             <Form.Item>
-                                <Button style={{marginLeft: 10, float: "right"}} type={'primary'}>Save</Button>
+                                <Button htmlType={'submit'} style={{marginLeft: 10, float: "right"}} type={'primary'}>Save</Button>
                                 <Button style={{float: "right"}}>Clear</Button>
                             </Form.Item>
                         </Form>
@@ -107,18 +197,23 @@ const SupplierRegistration = () => {
 
                     <Col style={{borderLeft: "solid", border: 1, borderWidth: '1px'}} span={14}>
                         <Button onClick={()=>{setIsModalOpen(true)}} style={{float: 'right', marginBottom: 15}} type={'primary'}>Add Contact</Button>
-                        <Table bordered columns={columns}/>
+                        <Table bordered dataSource={contacts} columns={columns}/>
                     </Col>
                 </Row>
             </Card>
-            <Modal onCancel={()=>{setIsModalOpen(false)}} title={'Create Contact'} open={isModalOpen}>
-                <Form layout={'vertical'} style={{padding: 10}}>
-                    <Input name={'contact_name'} label={'Contact Name'}/>
-                    <Input name={'telephone'} label={'Telephone'}/>
-                    <Input name={'mobile'} label={'Mobile'}/>
-                    <Input name={'email'} label={'Email'}/>
-                    <Form.Item label={'Status'}>
-                        <Radio.Group optionType={'button'} buttonStyle={'solid'} value={true} options={[{label: 'Active', value: true}, {label: 'Inactive', value: false}]}/>
+            <Modal onCancel={()=>{setIsModalOpen(false)}} title={'Create Contact'} onOk={handleContactFormSubmit} open={isModalOpen}>
+                <Form form={contactForm} layout={'vertical'} style={{padding: 10}}>
+                    <Form.Item label={'Contact Name'} name={'name'}>
+                        <Input/>
+                    </Form.Item>
+                    <Form.Item label={'Mobile'} name={'mobile'}>
+                        <Input/>
+                    </Form.Item>
+                    <Form.Item label={'Email'} name={'email'}>
+                        <Input/>
+                    </Form.Item>
+                    <Form.Item label={'Telephone'} name={'tel'}>
+                        <Input/>
                     </Form.Item>
                 </Form>
             </Modal>

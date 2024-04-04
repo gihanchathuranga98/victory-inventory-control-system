@@ -1,28 +1,37 @@
-import {Button, Col, Form, Input, Row, Typography} from "antd";
+import {Button, Col, Form, Input, notification, Row, Typography} from "antd";
 import Card from "../components/Card/Card";
 import {useContext, useState} from "react";
 import axios from "axios";
 import {AuthContext} from "../context/AuthContext";
+import AuthService from "../services/Auth.service";
+import {AlertContext} from "../context/AlertContext";
 
 const Login:React.FC = () => {
 
     const {isLoggedIn, setLogin} = useContext(AuthContext)
+    const {success, info, warning, error} = useContext(AlertContext)
+
     const {Password} = Input;
     const [form] = Form.useForm();
 
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const {Title} = Typography;
 
-    const handleFinish = async ({username, password}:any) => {
-        form.resetFields();
-        setLogin && setLogin(true);
-        // await axios.post('/auth', {username, password})
-        //     .then(data => {
-        //
-        //     })
-        //     .catch(err => {
-        //
-        //     })
+    const authService = new AuthService();
+
+    const handleFinish = ({username, password}:any) => {
+        authService.login(username, password)
+            .then(data => {
+                localStorage.setItem('fName', data.fname)
+                localStorage.setItem('lName', data.lname)
+                localStorage.setItem('accessToken', data.accessToken);
+                localStorage.setItem('refreshToken', data.refreshToken);
+                setLogin(true);
+            })
+            .catch(err =>{
+                console.log('error in login', err)
+                error('Login Faild', 'Please check your credentials and try again')
+            })
     }
 
     return (

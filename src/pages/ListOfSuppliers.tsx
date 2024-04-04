@@ -6,6 +6,9 @@ import {SupplierInterface} from "../models/interfaces/Supplier.interface";
 import {ContactsInterface} from "../models/interfaces/Contacts.interface";
 import UpdateSupplierModal from "../components/modals/UpdateSupplierModal";
 import AddNewSupplier from "../components/modals/AddNewSupplier";
+import SupplierService from "../services/SupplierService";
+import {AlertContext} from "../context/AlertContext";
+import {useNavigate} from "react-router-dom";
 
 
 enum ModalNameEnum {
@@ -15,23 +18,24 @@ enum ModalNameEnum {
 
 const ListOfSuppliers = () => {
 
+    const supplierService = new SupplierService();
+
+    const [suppliers, setSuppliers] = useState<SupplierInterface[]>([])
+
     const [modelData, setModelData] = useState<{updateSupplier: SupplierInterface | undefined}>({
         updateSupplier: undefined,
     })
     const [modelOpen, setModelOpen] = useState<{updateSupplier: boolean, supplierContactsUpdate: boolean}>({[ModalNameEnum.SupplierUpdate]: false, [ModalNameEnum.SupplierContactsUpdate]: false})
-
     const [showContacts, setShowContacts] = useState<{isOpen: boolean, contacts: ContactsInterface[] | undefined}>({isOpen: false, contacts: []});
     const [addNewSupplierModal, setAddNewSupplierModal] = useState<boolean>(false)
     const [form] = Form.useForm();
 
     const auth = useContext(AuthContext);
-    useEffect(() => {
-        //load suppliers
-    }, []);
+    const {error, success} = useContext(AlertContext);
+    const navigate = useNavigate();
 
-    useEffect(() => {
-        form.resetFields();
-    }, [modelData]);
+    const {confirm} = Modal;
+
 
     const mockSuppliers: SupplierInterface[] = [
         {
@@ -79,6 +83,19 @@ const ListOfSuppliers = () => {
         }
     ]
 
+    const removeSupplier = (id: string) => {
+        supplierService.deleteSupplier(id)
+            .then(data => {
+                success('Supplier Deleted', 'Supplier has deleted successfully')
+            })
+            .catch(e => {
+                error('Deletion Failed', 'Supplier deletion failed, please try again')
+            })
+            .finally(()=>{
+                loadSuppliers();
+            })
+    }
+
     const contactsColumns = [
         {
             title: 'Contact Name',
@@ -91,28 +108,22 @@ const ListOfSuppliers = () => {
             key: 'mobile'
         },
         {
+            title: 'Telephone',
+            dataIndex: 'tel',
+            key: 'tel2'
+        },
+        {
             title: 'Email',
             dataIndex: 'email',
             key: 'email'
-        },
-        {
-            title: 'Address',
-            dataIndex: 'address',
-            key: 'address'
         }
     ]
 
     const columns = [
         {
-            title: 'Supplier ID',
-            dataIndex: 'id',
-            key: 'id'
-        },
-        {
             title: 'Supplier Name',
             dataIndex: 'name',
             key: 'name',
-            filteredValue: ['Gihan'],
             onFilter: () => true
         },
         {
@@ -138,6 +149,11 @@ const ListOfSuppliers = () => {
             }
         },
         {
+            title: 'Address',
+            dataIndex: 'address',
+            key: 'address'
+        },
+        {
             title: 'options',
             dataIndex: 'id',
             key: 'id',
@@ -146,14 +162,18 @@ const ListOfSuppliers = () => {
                 return (
                     <Form layout={'inline'}>
                         <Form.Item>
-                            <Button value={value} type={'primary'} danger>Remove</Button>
+                            <Button onClick={()=>{
+                                confirm({
+                                    okText: 'Remove',
+                                    okType: 'danger',
+                                    title: 'Are You Sure..?',
+                                    content: 'Do you need to delete this supplier?',
+                                    onOk: ()=>{removeSupplier(value)}
+                                })
+                            }} value={value} type={'primary'} danger>Remove</Button>
                         </Form.Item>
                         <Form.Item>
-                            <Button onClick={()=>{
-                                form.resetFields();
-                                manageModals(ModalNameEnum.SupplierUpdate, true)
-                                setModelData({...modelData, updateSupplier: record})
-                            }} value={value} type={'primary'} >Update</Button>
+                            <Button onClick={()=>{navigate(`/supplier-update/${value}`)}} value={value} type={'primary'} >Update</Button>
                         </Form.Item>
                     </Form>
                 )
@@ -166,30 +186,45 @@ const ListOfSuppliers = () => {
     }, []);
 
     const loadSuppliers = () => {
-        // load supplier data
+        supplierService.getAllSuppliers()
+            .then(data => {
+                const suppliers = data.map((supplier:any) => {
+                    return {
+                        id: supplier.id,
+                        name: supplier.name,
+                        address: supplier.address,
+                        tel: supplier.telephone,
+                        fax: supplier.fax,
+                        brNo: supplier.br_number,
+                        vatRegNo: supplier.vat_reg_no,
+                        contacts: supplier.contact.map((contact:any) => {
+                            return {
+                                id: contact.id,
+                                name: contact.name,
+                                email: contact.email,
+                                mobile: contact.mobile,
+                                tel: contact.telephone
+                            }
+                        })
+
+                    }
+                })
+
+                setSuppliers(suppliers);
+            })
+            .catch(e => {
+                error('Supplier Fething Failed', 'Unable to load suppliers, please reload')
+            })
     }
 
     const manageModals = (modalName: ModalNameEnum, status: boolean): void => {
         form.resetFields()
-        if(!status){
-            setModelData(prevState => {
-
-                switch (modalName){
-                    case ModalNameEnum.SupplierUpdate:
-                        return {...prevState, [ModalNameEnum.SupplierUpdate]: undefined}
-
-                    default:
-                        return {...prevState}
-                }
-
-            })
-        }
 
         setModelOpen(prevState => {
 
             switch (modalName){
                 case ModalNameEnum.SupplierUpdate:
-                    return {...prevState, updateSupplier: status};
+                    return prevState;
 
                 case ModalNameEnum.SupplierContactsUpdate:
                     return {...prevState, supplierContactsUpdate: status}
@@ -203,10 +238,10 @@ const ListOfSuppliers = () => {
         <>
             <Breadcrumb items={[{title: 'Home', href: '#'}, {title: 'List of Suppliers'}]}/>
             <Card title={'List of Suppliers'}>
-                <Button onClick={()=>{setAddNewSupplierModal(true)}} type={'primary'} style={{float: "right", marginBottom: 15, marginLeft: 10}}>Add New Supplier</Button>
+                {/*<Button onClick={()=>{setAddNewSupplierModal(true)}} type={'primary'} style={{float: "right", marginBottom: 15, marginLeft: 10}}>Add New Supplier</Button>*/}
                 <Button style={{float: "right", marginBottom: 15, marginLeft: 10}} type={'primary'}>Print</Button>
                 <Button style={{float: "right", marginBottom: 15, marginLeft: 10}} type={'primary'}>Export</Button>
-                <Table bordered dataSource={mockSuppliers} columns={columns}/>
+                <Table bordered dataSource={suppliers} columns={columns}/>
             </Card>
 
             <Modal open={showContacts.isOpen} onCancel={()=>{setShowContacts({isOpen: false, contacts: []})}} width={'800px'} title={'Contacts'}>
