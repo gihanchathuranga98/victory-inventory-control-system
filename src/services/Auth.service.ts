@@ -7,7 +7,7 @@ class AuthService {
             const res = await axios.post('/auth/authenticate', {username, password})
             return res.data;
         }catch (e){
-            Promise.reject(e);
+            return Promise.reject(e);
         }
     }
 
