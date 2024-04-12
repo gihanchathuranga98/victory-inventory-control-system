@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import logo from './logo.svg';
 import './App.css';
 import {AuthContext} from "./context/AuthContext";
@@ -22,27 +22,54 @@ import SupplierUpdate from "./pages/SupplierUpdate";
 
 function App() {
 
+  const authService = new AuthService();
+
+  const axiosInstance = axios.create({baseURL: 'http://localhost:8000/api/v1'});
+  axios.defaults.baseURL = 'http://localhost:8000/api/v1';
+
   const [api, contextHolder] = notification.useNotification();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
-  const setLogin = (status: boolean) => {
-    setIsLoggedIn((prev:boolean) => {
-      return status;
-    })
-    axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('accessToken')}`;
+  const accessTokenRef = useRef<string>();
+  const refreshTokenRef = useRef<string>();
+  const refreshRef = useRef<number>(0);
+
+  const setLogin = (status: boolean, accessToken?: string, refreshToken?: string) => {
+
+    if(status && refreshToken && accessToken){
+      refreshTokenRef.current = refreshToken;
+      accessTokenRef.current = accessToken;
+      setIsLoggedIn((prev:boolean) => {
+        return status;
+      })
+    }else{
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("refreshToken")
+    }
+    axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
   }
 
-  const authService = new AuthService();
-
-  axios.defaults.baseURL = 'http://localhost:8000/api/v1';
-
   useEffect(() => {
-  //   get the authentication details if not logged in
-  //   setLogin((prev: {isLoggedIn: boolean, toggleLogin:()=>{}}) => {
-  //     const auth = {...prev};
-  //     auth.isLoggedIn = false
-  //     return auth;
-  //   })
+    const accessToken = localStorage.getItem('accessToken');
+    const refreshToken = localStorage.getItem("refreshToken");
+    axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+
+    if(refreshToken)
+      refreshTokenRef.current = refreshToken;
+
+    if(accessToken){
+      accessTokenRef.current = accessToken;
+      if(accessTokenRef.current){
+        authService.verifyAccessToken(accessTokenRef.current)
+            .then(data => {
+              setLogin(true);
+            //   set fname and lname
+            })
+            .catch(err => {
+
+            })
+      }
+    }
   }, []);
 
   const success = (title: string, msg: string) => {
@@ -73,26 +100,28 @@ function App() {
     });
   }
 
-  const axiosInstance = axios.create({baseURL: 'http://localhost:8000/api/v1'});
 
   axios.interceptors.response.use(response => {
     return Promise.resolve(response);
   }, err => {
-    console.log('came to response error', err.config)
     const originalRequest = err.config;
-    const refreshToken = localStorage.getItem('refreshToken')
-    if(err.response.status === 403 && refreshToken){
-      getRefreshToken(refreshToken)
-      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('accessToken')}`
+    const refreshToken = `${localStorage.getItem('refreshToken')}`;
+
+    if(err.response.status === 403 && refreshToken && refreshRef.current < 3){
+      refreshRef.current = refreshRef.current + 1;
+      getAccessToken(refreshToken);
+      console.log('accessTokenRef', accessTokenRef.current)
+      originalRequest.headers['Authorization'] = `Bearer ${accessTokenRef.current}`;
       return axiosInstance(originalRequest);
     }
     return Promise.reject(err)
   })
 
-  const getRefreshToken = (refreshToken: string) => {
+  const getAccessToken = (refreshToken: string) => {
     authService.refreshToken(refreshToken)
         .then(data => {
           localStorage.setItem('accessToken', data.accessToken);
+          accessTokenRef.current = data.accessToken;
           axios.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
           axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
         })
@@ -125,7 +154,6 @@ function App() {
               ):
               (
                   <Routes>
-                    <Route Component={Login} path={'/'}/>
                     <Route Component={Login} path={'*'}/>
                   </Routes>
               )}

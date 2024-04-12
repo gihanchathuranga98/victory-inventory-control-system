@@ -4,7 +4,7 @@ import {useContext, useEffect, useState} from "react";
 import {ContactsInterface} from "../models/interfaces/Contacts.interface";
 import {SupplierInterface} from "../models/interfaces/Supplier.interface";
 import {Link, useNavigate, useParams} from "react-router-dom";
-import SupplierService from "../services/SupplierService";
+import SupplierService from "../services/Supplier.service";
 import {AlertContext} from "../context/AlertContext";
 import {ContactResponseDto, SupplierResponseDto} from "../models/dto/SupplierResponse.dto";
 

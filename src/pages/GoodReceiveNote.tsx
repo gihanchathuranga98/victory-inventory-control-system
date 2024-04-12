@@ -5,10 +5,12 @@ import PoItem from "../components/GrnItemTypes/PoItem";
 import {DiscountTypeEnum} from "../enums/DiscountTypeEnum";
 import FreeItem from "../components/GrnItemTypes/FreeItem";
 import ServiceItem from "../components/GrnItemTypes/ServiceItem";
+import {useState} from "react";
 
 const GoodReceiveNote = () => {
 
     const {Text, Title} = Typography;
+    const [po, setPo] = useState([]);
 
     const poColumns = [
         {

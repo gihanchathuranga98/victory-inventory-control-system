@@ -70,7 +70,7 @@ const PurchaseRequestNote = () => {
                     if(!itemExists(data.id)){
                         setPrnItem(prevState => {
                             const crntArray = prevState;
-                            return crntArray.concat([{id:data.id, code: data.item_code, name: data.name, qty: values.qty}])
+                            return crntArray.concat([{id:data.id, code: data.itemCode, name: data.name, qty: values.qty}])
                         })
                     }else{
                         info('Duplicate Entry', 'The selected item already exists');
