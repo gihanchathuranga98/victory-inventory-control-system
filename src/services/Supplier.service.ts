@@ -100,7 +100,7 @@ class SupplierService {
             })
 
             const updateContactsPromise = new Promise((resolve, reject) => {
-                axios.post(`/supplier/contacts/${id}`, contactPayload)
+                axios.put(`/supplier/contacts/${id}`, contactPayload)
                     .then(res => {
                         resolve(res.data);
                     })

@@ -358,7 +358,7 @@ const PurchaseOrder =  () => {
                                 </Col>
                                     <Col span={12}>
                                         <Text style={{marginBottom: 10, marginRight: 10}}>Discount Type :</Text><br/>
-                                        <Radio.Group>
+                                        <Radio.Group defaultValue={DiscountTypeEnum.VALUE}>
                                             <Radio value={DiscountTypeEnum.PERCENTAGE}>Percentage</Radio>
                                             <Radio value={DiscountTypeEnum.VALUE}>Amount</Radio>
                                         </Radio.Group>

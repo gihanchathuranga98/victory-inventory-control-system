@@ -54,6 +54,43 @@ const Nav = ({children}:any) => {
                     icon: <AppstoreOutlined />,
                     label: 'SRN',
                 },
+                {
+                    key: '9',
+                    icon: <AppstoreOutlined />,
+                    label: 'RM Category',
+                },
+                {
+                    key: '10',
+                    icon: <AppstoreOutlined />,
+                    label: 'RM Sub Category',
+                },
+            ]
+        },
+        {
+            key: 'production',
+            icon: <AppstoreOutlined />,
+            label: 'Production',
+            children: [
+                {
+                    key: '11',
+                    icon: <AppstoreOutlined />,
+                    label: 'Batch Creation'
+                },
+                {
+                    key: '12',
+                    icon: <AppstoreOutlined />,
+                    label: 'Product Creation'
+                },
+                {
+                    key: '13',
+                    icon: <AppstoreOutlined />,
+                    label: 'Finish Products'
+                },
+                {
+                    key: '14',
+                    icon: <AppstoreOutlined />,
+                    label: 'Issue Items'
+                },
             ]
         }
     ]
@@ -102,6 +139,30 @@ const Nav = ({children}:any) => {
 
             case 8:
                 navigate('/list-of-suppliers')
+                break;
+
+            case 9:
+                navigate('/raw-material-categories')
+                break;
+
+            case 10:
+                navigate('/rm-sub-category')
+                break;
+
+            case 11:
+                navigate('/batch-creation')
+                break;
+
+            case 12:
+                navigate('/product-creation')
+                break;
+
+            case 13:
+                navigate('/finish-products')
+                break;
+
+            case 14:
+                navigate('/issue-items')
                 break;
         }
 

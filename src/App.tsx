@@ -19,6 +19,11 @@ import {notification} from "antd";
 import {AlertContext} from "./context/AlertContext";
 import Dashboard from "./pages/Dashboard";
 import SupplierUpdate from "./pages/SupplierUpdate";
+import RawMaterialSubCategory from "./pages/RawMaterialSubCategory";
+import BatchCreation from "./pages/Production/BatchCreation";
+import FinishProducts from "./pages/Production/FinishProducts";
+import ProductCreation from "./pages/Production/ProductCreation";
+import IssueItem from "./pages/Production/IssueItem";
 
 function App() {
 
@@ -149,6 +154,11 @@ function App() {
                       <Route Component={GoodReceiveNote} path={'/grn'}/>
                       <Route Component={SupplierReturnNote} path={'/srn'}/>
                       <Route Component={SupplierUpdate} path={'/supplier-update/:id'}/>
+                      <Route Component={RawMaterialSubCategory} path={'/rm-sub-category'}/>
+                      <Route Component={BatchCreation} path={'/batch-creation'}/>
+                      <Route Component={FinishProducts} path={'/finish-products'}/>
+                      <Route Component={ProductCreation} path={'/product-creation'}/>
+                      <Route Component={IssueItem} path={'/issue-items'}/>
                     </Routes>
                   </Nav>
               ):

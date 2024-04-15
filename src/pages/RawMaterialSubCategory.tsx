@@ -1,8 +1,8 @@
 import Breadcrumb from "../components/Breadcrumb/Breadcrumb";
-import {Button, Card, Col, Form, Input, Row, Table} from "antd";
+import {Button, Card, Col, Form, Input, Row, Select, Table} from "antd";
 import {useState} from "react";
 
-const RawMaterialCategories = () => {
+const RawMaterialSubCategory = () => {
 
     const [categories, setCategories] = useState<any[]>([
         {
@@ -43,15 +43,18 @@ const RawMaterialCategories = () => {
 
     return (
         <>
-            <Breadcrumb items={[{title: 'Home', href: '#'}, {title: 'Raw Material Categories'}]}/>
-            <Card title={'Raw Material Categories'}>
+            <Breadcrumb items={[{title: 'Home', href: '/'}, {title: 'Raw Material Sub Categories'}]}/>
+            <Card title={'Raw Material Sub Categories'}>
                 <Row gutter={15}>
                     <Col offset={2} span={7}>
                         <Form layout={'vertical'}>
                             <Form.Item label={'Category Name'}>
+                                <Select showSearch={true}/>
+                            </Form.Item>
+                            <Form.Item label={'Sub Category Name'}>
                                 <Input/>
                             </Form.Item>
-                            <Form.Item label={'Category Code'}>
+                            <Form.Item label={'Sub Category Code'}>
                                 <Input/>
                             </Form.Item>
                             <Form.Item>
@@ -68,4 +71,4 @@ const RawMaterialCategories = () => {
     )
 }
 
-export default RawMaterialCategories;
+export default RawMaterialSubCategory;
