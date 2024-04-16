@@ -5,4 +5,6 @@ export interface ContactsInterface {
     address?: string;
     email?: string;
     tel?: string;
+    uid?: string;
+    supplierId?: string;
 }
