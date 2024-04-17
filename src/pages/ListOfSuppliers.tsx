@@ -6,7 +6,7 @@ import {SupplierInterface} from "../models/interfaces/Supplier.interface";
 import {ContactsInterface} from "../models/interfaces/Contacts.interface";
 import UpdateSupplierModal from "../components/modals/UpdateSupplierModal";
 import AddNewSupplier from "../components/modals/AddNewSupplier";
-import SupplierService from "../services/SupplierService";
+import SupplierService from "../services/Supplier.service";
 import {AlertContext} from "../context/AlertContext";
 import {useNavigate} from "react-router-dom";
 

@@ -26,9 +26,9 @@ const Login:React.FC = () => {
                 localStorage.setItem('lName', data.lname)
                 localStorage.setItem('accessToken', data.accessToken);
                 localStorage.setItem('refreshToken', data.refreshToken);
-                setLogin(true);
+                setLogin(true, data.accessToken, data.refreshToken);
             })
-            .catch(err =>{
+            .catch( err =>{
                 console.log('error in login', err)
                 error('Login Faild', 'Please check your credentials and try again')
             })
@@ -40,11 +40,11 @@ const Login:React.FC = () => {
                 <Col style={{marginTop: '20vh'}} span={7} className={''}>
                     <Card bordered={true} subTitle={'Please enter your credentials'} title={'USER LOGIN'}>
                         <Form form={form} layout={'vertical'} onFinish={handleFinish}>
-                            <Form.Item name={'username'} label={'Username'} rules={[{required: true}]}>
-                                <Input/>
+                            <Form.Item initialValue={'denam98'} name={'username'} label={'Username'} rules={[{required: true}]}>
+                                <Input defaultValue={'denam98'}/>
                             </Form.Item>
-                            <Form.Item name={'password'} label={'Password'} rules={[{required: true}]}>
-                                <Password/>
+                            <Form.Item name={'password'} initialValue={'123abc'} label={'Password'} rules={[{required: true}]}>
+                                <Password defaultValue={'123abc'}/>
                             </Form.Item>
                             <Form.Item style={{justifyContent: "center", display: 'flex'}}>
                                 <Button htmlType={'submit'} loading={isLoading} style={{paddingLeft: 55, paddingRight: 55}} type={'primary'}>Login</Button>

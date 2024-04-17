@@ -4,9 +4,10 @@ import {useContext, useEffect, useState} from "react";
 import {ContactsInterface} from "../models/interfaces/Contacts.interface";
 import {SupplierInterface} from "../models/interfaces/Supplier.interface";
 import {Link, useNavigate, useParams} from "react-router-dom";
-import SupplierService from "../services/SupplierService";
+import SupplierService from "../services/Supplier.service";
 import {AlertContext} from "../context/AlertContext";
 import {ContactResponseDto, SupplierResponseDto} from "../models/dto/SupplierResponse.dto";
+import {v4 as uuid} from "uuid";
 
 const SupplierUpdate = () => {
 
@@ -25,6 +26,10 @@ const SupplierUpdate = () => {
     const {id}:any= useParams();
 
     useEffect(() => {
+        getSupplierData();
+    }, []);
+
+    const getSupplierData = () => {
         supplierService.getSupplier(id)
             .then((data:SupplierResponseDto)  => {
 
@@ -47,7 +52,8 @@ const SupplierUpdate = () => {
                             name: cntct.name,
                             email: cntct?.email,
                             mobile: cntct?.mobile,
-                            tel: cntct?.telephone
+                            tel: cntct?.telephone,
+                            supplierId: cntct?.supplier_id
                         }
                     })
                 }
@@ -68,7 +74,7 @@ const SupplierUpdate = () => {
             .catch(e => {
                 error('Data Retrival Failed', 'Unable to fetch supplier data, please try again');
             })
-    }, []);
+    }
 
     const handleUpdate = (values: any) => {
 
@@ -95,10 +101,11 @@ const SupplierUpdate = () => {
     }
 
     const handleContactFormSubmit = () => {
+        const uid = uuid();
         const {name, email, mobile, tel} = contactForm.getFieldsValue();
         setContacts((prevState: ContactsInterface[]) => {
             let currentArray = prevState;
-            return currentArray.concat([{name, email, mobile, tel}]);
+            return currentArray.concat([{name, email, mobile, tel, uid}]);
         })
         contactForm.resetFields();
         setIsModalOpen(false);
@@ -115,12 +122,48 @@ const SupplierUpdate = () => {
         })
     }
 
-    const handleContactRemove = (id: string) => {
-        setContacts(prevState => {
-            return prevState.filter(cntct => {
-                return cntct.id !== id;
+    const handleContactRemove = (record: ContactsInterface) => {
+        if(record.id){
+            supplierService.removeSupplierContact(record.id, record.supplierId ? record.supplierId : '', record.name)
+                .then(data => {
+                })
+                .catch(e => {
+                    error('Unexpected Error', 'Unable to remove the contact');
+                })
+                .finally(() => {
+                    supplierService.getSupplier(id)
+                        .then((data:SupplierResponseDto)  => {
+
+                            let contacts: ContactsInterface[] = []
+
+                            if(data.contact && data.contact.length > 0){
+                                contacts = data.contact.map(cntct => {
+                                    return {
+                                        id: cntct.id,
+                                        name: cntct.name,
+                                        email: cntct?.email,
+                                        mobile: cntct?.mobile,
+                                        tel: cntct?.telephone,
+                                        supplierId: cntct?.supplier_id
+                                    }
+                                })
+                            }
+
+                            setContacts(contacts);
+
+                        })
+                        .catch(e => {
+                            error('Data Retrival Failed', 'Unable to fetch supplier data, please try again');
+                        })
+                })
+        }else if (record.uid){
+            setContacts(prevState => {
+                return prevState.filter(cntct => {
+                    return cntct.uid !== record.uid;
+                })
             })
-        })
+        }
+
     }
 
     const columns:any[] = [
@@ -150,11 +193,11 @@ const SupplierUpdate = () => {
             dataIndex: 'id',
             key: 'id',
             width: '250px',
-            render: (value: string, record: SupplierInterface) => {
+            render: (value: string, record: ContactsInterface) => {
                 return (
                     <Form    layout={'inline'}>
                         <Form.Item>
-                            <Button onClick={()=>{handleContactRemove(value)}} value={value} type={'primary'} danger>Remove</Button>
+                            <Button onClick={()=>{handleContactRemove(record)}} value={value} type={'primary'} danger>Remove</Button>
                         </Form.Item>
                         {/*<Form.Item>*/}
                         {/*    <Button onClick={(event)=>{*/}

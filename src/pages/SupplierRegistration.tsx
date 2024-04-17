@@ -2,7 +2,7 @@ import Breadcrumb from "../components/Breadcrumb/Breadcrumb";
 import {Button, Card, Col, Form, Input, Modal, Radio, Row, Table} from "antd";
 import {useContext, useEffect, useState} from "react";
 import {SupplierInterface} from "../models/interfaces/Supplier.interface";
-import SupplierService from "../services/SupplierService";
+import SupplierService from "../services/Supplier.service";
 import {AlertContext} from "../context/AlertContext";
 import {ContactsInterface} from "../models/interfaces/Contacts.interface";
 

@@ -5,10 +5,28 @@ import PoItem from "../components/GrnItemTypes/PoItem";
 import {DiscountTypeEnum} from "../enums/DiscountTypeEnum";
 import FreeItem from "../components/GrnItemTypes/FreeItem";
 import ServiceItem from "../components/GrnItemTypes/ServiceItem";
+import {useContext, useEffect, useState} from "react";
+import {PoService} from "../services/Po.service";
+import {AlertContext} from "../context/AlertContext";
 
 const GoodReceiveNote = () => {
 
+    const poService = new PoService();
+
     const {Text, Title} = Typography;
+    const [po, setPo] = useState([]);
+
+    const {error, info, warning, success} = useContext(AlertContext);
+
+    useEffect(() => {
+        poService.getAllPOs()
+            .then(data => {
+                setPo(data);
+            })
+            .catch(e => {
+                error('Unexpected Error', 'Unable to fetch PO data');
+            })
+    }, []);
 
     const poColumns = [
         {

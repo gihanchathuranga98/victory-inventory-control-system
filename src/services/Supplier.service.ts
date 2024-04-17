@@ -82,10 +82,12 @@ class SupplierService {
 
             const contactPayload = supplier.contacts?.map(cntct => {
                 return {
-                    id: cntct.id ? cntct.id : null,
+                    id: cntct.id ? cntct.id : undefined,
                     name: cntct.name,
                     mobile: cntct.mobile,
-                    telephone: cntct.tel
+                    telephone: cntct.tel,
+                    email: cntct.email,
+                    supplier_id: id
                 }
             })
 
@@ -100,7 +102,7 @@ class SupplierService {
             })
 
             const updateContactsPromise = new Promise((resolve, reject) => {
-                axios.post(`/supplier/contacts/${id}`, contactPayload)
+                axios.put(`/supplier/contacts/${id}`, contactPayload)
                     .then(res => {
                         resolve(res.data);
                     })
@@ -116,6 +118,16 @@ class SupplierService {
             return Promise.reject(e)
         }
     }
+
+    removeSupplierContact = async (contactId: string, supplierId: string, name: string) => {
+        try {
+            const res = await axios.put(`/supplier/contacts/${supplierId}`, [{id: contactId, is_active: false, name, supplier_id: supplierId}]);
+            return res.data;
+        }catch (e) {
+            return Promise.reject(e);
+        }
+    }
+
 }
 
 export default SupplierService;

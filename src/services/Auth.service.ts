@@ -25,6 +25,15 @@ class AuthService {
             return Promise.reject(e);
         }
     }
+
+    verifyAccessToken = async (accessToken: string) => {
+        try {
+            const res = await axios.post('/auth/verityToken', {accessToken})
+            return res.data;
+        }catch (e){
+            return Promise.reject(e);
+        }
+    }
 }
 
 export default  AuthService;

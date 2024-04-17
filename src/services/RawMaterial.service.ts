@@ -1,6 +1,7 @@
 import axios from "axios";
 import {RawMaterialInterface} from "../models/interfaces/RawMaterial.interface";
 import {MaterialTypeEnum} from "../enums/MaterialType.enum";
+import {RawMaterialDto} from "../models/dto/RawMaterialDto";
 
 class RawMaterialService {
     getAllRawMaterials = async () => {
@@ -46,9 +47,31 @@ class RawMaterialService {
         }
     }
 
-    getOneRawMaterial = async (id: string) => {
+    getOneRawMaterial = async (id: string): Promise<RawMaterialDto> => {
         try {
-            const res = await axios.get(`/raw-material/${id}`);
+            const res = (await axios.get(`/raw-material/${id}`)).data;
+            return  {
+                id: res.id,
+                name: res.name,
+                itemCode: res.item_code,
+                description: res.description,
+                reOrderLevel: res.re_order_level,
+                reOrderQty: res.re_order_qty,
+                isInventory: res.is_inventory,
+                rmCategoryId: res.rm_category_id,
+                uomId: res.uom_id,
+                supplier: res.supplier,
+                rmCategory: res.rm_category,
+                uom: res.uom,
+            }
+        }catch (e) {
+            return Promise.reject(e)
+        }
+    }
+
+    getRawMaterials = async (rmIds: string[]) => {
+        try {
+            const res = await axios.post('/raw-material/list', rmIds);
             return res.data;
         }catch (e) {
             return Promise.reject(e)
