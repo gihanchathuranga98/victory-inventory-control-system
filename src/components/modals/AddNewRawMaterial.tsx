@@ -47,6 +47,7 @@ const AddNewRawMaterial = ({onOk, onCancel, open}: AddNewRawMaterialProps) => {
     const handleOk = () => {
         const {name, description, code, unitId, categoryId, reOrderLevel, reOrderQty, materialType} = form.getFieldsValue();
         if (onOk) {
+            console.log('in OK==> ', {name, description, code, unitId, categoryId, reOrderLevel, reOrderQty, materialType})
             onOk({name, description, code, unitId, categoryId, reOrderLevel, reOrderQty, materialType});
         }
         form.resetFields();

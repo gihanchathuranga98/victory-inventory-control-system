@@ -1,34 +1,24 @@
 import Breadcrumb from "../components/Breadcrumb/Breadcrumb";
 import {Button, Card, Col, Form, Input, Row, Table} from "antd";
-import {useState} from "react";
-
+import {useContext, useEffect, useState} from "react";
+import RawMaterialService from "../services/RawMaterial.service";
+import {AlertContext} from "../context/AlertContext";
+import {v4 as uuid} from "uuid";
 const RawMaterialCategories = () => {
 
-    const [categories, setCategories] = useState<any[]>([
-        {
-            id: '1',
-            name: 'Wool',
-        },
-        {
-            id: '2',
-            name: 'Glue'
-        },
-        {
-            id: '3',
-            name: 'Threads'
-        }
-    ])
+    const rawMaterialService = new RawMaterialService();
+
+    const {error, success, info, warning} = useContext(AlertContext);
+
+    const [form] = Form.useForm();
+
+    const [categories, setCategories] = useState<any[]>([]);
 
     const rmCategoryTable = [
         {
-            title: 'Category COde',
-            dataIndex: 'id',
-            key: 'id'
-        },
-        {
             title: 'Category Name',
             dataIndex: 'name',
-            key: 'id'
+            key: 'name'
         },
         {
             title: 'Options',
@@ -36,10 +26,49 @@ const RawMaterialCategories = () => {
             key: 'id',
             width: 100,
             render: (value: string) => {
-                return <Button danger type={'primary'}>Remove</Button>
+                return <Button onClick={()=>{handleCategoryRemove(value)}} danger type={'primary'}>Remove</Button>
             }
         }
     ]
+
+    useEffect(() => {
+        loadRMCategories();
+    }, []);
+
+    const handleCategoryRemove = (id: string) => {
+        rawMaterialService.removeRMCategory(id)
+            .then(e => {
+                loadRMCategories();
+            })
+            .catch(e => {
+                error('Unexpected Error', 'RM Category removal failed')
+            })
+    }
+
+    const loadRMCategories = () => {
+        rawMaterialService.getAllRMCategories()
+            .then(data => {
+                setCategories(data);
+            })
+            .catch(err => {
+                error('Unexpected Error', 'Unable to fetch RM categories');
+            })
+    }
+
+    const handleFinish = ({name, code}: {name: string, code: string}) => {
+        setCategories((prevState: any[]) => {
+            return prevState.concat([{name, id: uuid()}]);
+        })
+        // rawMaterialService.addNewRMCategory(name, code)
+        //     .then(data => {
+        //         success('Request Success', 'New RM category has been added')
+        //         loadRMCategories();
+        //     })
+        //     .catch(e =>{
+        //         error('Request Failed', 'New RM category creation failed')
+        //     })
+        form.resetFields();
+    }
 
     return (
         <>
@@ -47,15 +76,12 @@ const RawMaterialCategories = () => {
             <Card title={'Raw Material Categories'}>
                 <Row gutter={15}>
                     <Col offset={2} span={7}>
-                        <Form layout={'vertical'}>
-                            <Form.Item label={'Category Name'}>
-                                <Input/>
-                            </Form.Item>
-                            <Form.Item label={'Category Code'}>
+                        <Form form={form} layout={'vertical'} onFinish={handleFinish}>
+                            <Form.Item label={'Category Name'} name={'name'}>
                                 <Input/>
                             </Form.Item>
                             <Form.Item>
-                                <Button style={{float: 'right'}} type={'primary'}>Add Category</Button>
+                                <Button htmlType={'submit'} style={{float: 'right'}} type={'primary'}>Add Category</Button>
                             </Form.Item>
                         </Form>
                     </Col>

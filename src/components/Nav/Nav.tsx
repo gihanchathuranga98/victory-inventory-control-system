@@ -59,11 +59,11 @@ const Nav = ({children}:any) => {
                     icon: <AppstoreOutlined />,
                     label: 'RM Category',
                 },
-                {
-                    key: '10',
-                    icon: <AppstoreOutlined />,
-                    label: 'RM Sub Category',
-                },
+                // {
+                //     key: '10',
+                //     icon: <AppstoreOutlined />,
+                //     label: 'RM Sub Category',
+                // },
             ]
         },
         {
@@ -84,12 +84,12 @@ const Nav = ({children}:any) => {
                 {
                     key: '13',
                     icon: <AppstoreOutlined />,
-                    label: 'Finish Products'
+                    label: 'Issue Items'
                 },
                 {
                     key: '14',
                     icon: <AppstoreOutlined />,
-                    label: 'Issue Items'
+                    label: 'Finish Products'
                 },
             ]
         }
@@ -158,12 +158,13 @@ const Nav = ({children}:any) => {
                 break;
 
             case 13:
-                navigate('/finish-products')
+                navigate('/issue-items')
                 break;
 
             case 14:
-                navigate('/issue-items')
+                navigate('/finish-products')
                 break;
+
         }
 
     }

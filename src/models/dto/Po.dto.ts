@@ -1,7 +1,7 @@
 import {DiscountTypeEnum} from "../../enums/DiscountTypeEnum";
 
 export interface PoDto {
-    prnId: string;
+    prnId?: string;
     supplierId: string;
     specialComment: string;
     deliveryLocation: string;

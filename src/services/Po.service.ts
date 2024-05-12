@@ -23,7 +23,7 @@ export class PoService {
                 discount: payload.discount,
                 items: payload.poItem
             }
-            const res = await axios.post('/po/add', {});
+            const res = await axios.post('/po/add', {...reqPayload});
             return res.data;
         }catch (e) {
             return Promise.reject(e);

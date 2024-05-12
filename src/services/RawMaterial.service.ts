@@ -27,7 +27,7 @@ class RawMaterialService {
 
             console.log('[addNewRawMaterial] [req]', req)
 
-            const payload: {name: string, item_code: string, is_inventory: boolean, rm_category_id: number, uom_id: number, description?: string, re_order_level?: string, re_order_qty?: number} = {
+            const payload: {name: string, item_code: string, is_inventory: boolean, rm_category_id: number, uom_id: number, description?: string, re_order_level?: string, re_order_qty?: number, is_active: boolean} = {
                 name: req.name,
                 item_code: req.code,
                 is_inventory: req.materialType === 0 ? true : false,
@@ -35,7 +35,8 @@ class RawMaterialService {
                 uom_id: +req.unitId,
                 description: req.description,
                 re_order_qty: req.reOrderQty ? +req.reOrderQty : 0,
-                re_order_level: req.reOrderLevel
+                re_order_level: req.reOrderLevel,
+                is_active: true
             }
 
             console.log('[addNewRawMaterial] [payload]', payload);
@@ -72,6 +73,33 @@ class RawMaterialService {
     getRawMaterials = async (rmIds: string[]) => {
         try {
             const res = await axios.post('/raw-material/list', rmIds);
+            return res.data;
+        }catch (e) {
+            return Promise.reject(e)
+        }
+    }
+
+    getAllRMCategories = async () => {
+        try {
+            const res = await axios.get('/raw-material/categories/all');
+            return res.data;
+        }catch (e) {
+            return Promise.reject(e);
+        }
+    }
+
+    addNewRMCategory = async (name: string, code: string) => {
+        try {
+            const res = await axios.post('', {name})
+            return res.data;
+        }catch (e) {
+            return Promise.reject(e);
+        }
+    }
+
+    removeRMCategory = async (id: string) => {
+        try {
+            const res = await axios.delete(`/url/${id}`)
             return res.data;
         }catch (e) {
             return Promise.reject(e)

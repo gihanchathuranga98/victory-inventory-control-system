@@ -55,6 +55,7 @@ const RawMaterials = () => {
     ]
 
     const handleAddRm = async (materialData: RawMaterialInterface) => {
+        console.log('handleAddRm ==> ', materialData)
         rawMaterialService.addNewRawMaterial(materialData)
             .then(data => {
                 success('Successfully Added', 'Raw Material Added Successfully')
