@@ -36,3 +36,7 @@
     transform: rotate(360deg);
   }
 }
+
+.ant-select-selection {
+  background-color: #E2F4C5;
+}

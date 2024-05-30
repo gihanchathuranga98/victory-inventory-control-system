@@ -10,6 +10,9 @@ import {PrnService} from "../services/Prn.service";
 import RawMaterialService from "../services/RawMaterial.service";
 import {v4 as uuid} from "uuid";
 import SupplierService from "../services/Supplier.service";
+import {PoService} from "../services/Po.service";
+import {PoDto} from "../models/dto/Po.dto";
+import TaxService from "../services/Tax.service";
 
 
 const PurchaseOrder =  () => {
@@ -17,6 +20,8 @@ const PurchaseOrder =  () => {
     const prnService = new PrnService();
     const rmService = new RawMaterialService();
     const supplierService = new SupplierService();
+    const poService = new PoService();
+    const taxService = new TaxService();
     const {error, success, info, warning} = useContext(AlertContext);
 
     const [prnForm] = Form.useForm();
@@ -29,6 +34,8 @@ const PurchaseOrder =  () => {
     const [isPrnTableLoading, setIsPrnTableLoading] = useState<boolean>(false);
     const [suppliers, setSuppliers] = useState([]);
     const [rawMaterials, setRawMaterials] = useState<any[]>([])
+    const [taxTypes, setTaxTypes] = useState<any[]>([]);
+    const [grossTotal, setGrossTotal] = useState<number>(0.00);
 
     useEffect(() => {
         prnService.getAllPRNs()
@@ -47,7 +54,56 @@ const PurchaseOrder =  () => {
             .catch(err => {
                 error('Unexpected Error', 'Unable to fetch raw materials')
             })
+
+        taxService.getAllTaxTypes()
+            .then(data => {
+                console.log('Tax Types ==> ', data);
+                setTaxTypes(data);
+            })
+            .catch(e => {
+                error('Unexpected Error', 'Unable to fetch tax types')
+            })
     }, []);
+
+    useEffect(() => {
+        if(poItems.length > 0){
+            const total = poItems.map((po) => {
+                return +((prnItems.find(prn => prn.prnItmId === po.prnItemId)).estimatedPricePerUnit) * +po.orderQty
+            })
+            setGrossTotal(total.reduce((total, currentValue)=>{
+                return +currentValue + +total;
+            }))
+            prnForm.setFieldValue('grossTotal', total.reduce((total, currentValue)=>{
+                return +currentValue + +total;
+            }))
+        }
+    }, [poItems]);
+
+    const handleNetTotal = () => {
+        const {grossTotal, discountType, discount, tax} = prnForm.getFieldsValue();
+        let totalPrice = +grossTotal;
+
+        if(discountType === DiscountTypeEnum.VALUE){
+            totalPrice = +totalPrice - +discount;
+        }else if(discountType === DiscountTypeEnum.PERCENTAGE){
+            totalPrice = totalPrice - (totalPrice * +discount / 100)
+        }
+
+        if(tax?.length > 0){
+            const taxObjs = tax.map((taxid: number) => {
+                return (taxTypes.find(type => type.id === taxid)).value
+            })
+
+            const taxValues = taxObjs.map((val: number) => {
+                return (val / 100 * totalPrice);
+            })
+
+            totalPrice = totalPrice + taxValues.reduce((total: number, currentValue: number)=>{
+                return total + +currentValue;
+            })
+        }
+        prnForm.setFieldValue('netTotal', totalPrice.toFixed(2));
+    }
 
     const {Text} = Typography
 
@@ -263,6 +319,46 @@ const PurchaseOrder =  () => {
         poItemForm.setFieldValue('suffix', rm?.uom?.name);
     }
 
+    const handlePoSubmit = () => {
+        console.log('[poItems]', poItems)
+        const {supplier, poNo, specialComment, supplierComment, location, contactPerson, grossTotal, netTotal, discountType, discount, tax} = prnForm.getFieldsValue();
+        console.log('Discount Type', discountType)
+        const requestPayload: PoDto = {
+            po_no: poNo,
+            supplier_id: supplier,
+            special_note: specialComment,
+            delivery_location: location,
+            contact_person: contactPerson,
+            discount_type: discountType || "1",
+            currency: 'LKR',
+            discount: discount,
+            tax_type: tax,
+            items: poItems.map(item => {
+                return {
+                    rm_id: String(item.rmId),
+                    qty: Number(item.orderQty),
+                    price_per_unit: Number(item.pricePerUnit) || 0,
+                    prn_item_id: String(item?.prnItemId)
+                }
+            })
+        }
+
+
+        poService.createNewPO(requestPayload)
+            .then(data => {
+                success('PO Saved', 'PO has been saved successfully');
+                poItemForm.resetFields();
+                prnForm.resetFields();
+            })
+            .catch(e => {
+                error('Unexpected Error', 'Unable to save the PO');
+            })
+        // prnForm.resetFields();
+        // poItemForm.resetFields();
+        // setPrnItems([]);
+        // setPoItems([]);
+    }
+
     return (
         <>
             <Breadcrumb items={[{title: 'Home', href: '/'}, {title: 'Purchase Order'}]}/>
@@ -293,32 +389,41 @@ const PurchaseOrder =  () => {
                                             </Form.Item>
                                     </Col>
                                     <Col span={12}>
-                                            <Form.Item label={'Supplier'}>
+                                            <Form.Item label={'Supplier'} name={'supplier'}>
                                                 <Select options={suppliers} showSearch={true}/>
                                             </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item label={'PO No.'} name={'poNo'}>
+                                            <Input/>
+                                        </Form.Item>
                                     </Col>
                                 </Row>
                             </Form>
                             <Table loading={isPrnTableLoading} dataSource={prnItems} bordered scroll={{x: 1000}} columns={prnColumns}/>
-                            <Form layout={'vertical'}>
+                            <Form layout={'vertical'} form={prnForm}>
                                 <Row gutter={15} style={{marginTop: 20, marginBottom: 20}}>
                                     <Col span={12}>
-                                        <Form.Item label={'Special Comment'}>
+                                        <Form.Item label={'Special Comment'} name={'specialComment'}>
                                             <TextArea rows={4}/>
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>
-                                        <Form.Item label={'Supplier'}>
-                                            <TextArea rows={4}/>
+                                        <Form.Item label={'Delivery Before'} name={'supplierComment'}>
+                                            <Input />
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>
-                                        <Form.Item label={'Delivery Location'}>
-                                            <Select showSearch={true}/>
+                                        <Form.Item label={'Delivery Location'} name={'location'}>
+                                            <Select showSearch={true}>
+                                                <Select.Option value={'1'}>
+                                                    Dematagoda
+                                                </Select.Option>
+                                            </Select>
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>
-                                        <Form.Item label={'Contact Person'}>
+                                        <Form.Item label={'Contact Person'} name={'contactPerson'}>
                                             <Input/>
                                         </Form.Item>
                                     </Col>
@@ -331,7 +436,7 @@ const PurchaseOrder =  () => {
                             <Row gutter={15} style={{marginTop: 20, marginBottom: 20}}>
                                 <Col span={12}>
                                     <Form.Item name={'poItem'} label={'Item Name'}>
-                                        <Select onSelect={handleRmSelect} options={rawMaterials?.map(rm => ({label: `${rm.item_code} - ${rm.name}`, value: rm.id}))} disabled={!!pendingPoItem?.name} showSearch={true}/>
+                                        <Select onSelect={handleRmSelect} options={rawMaterials?.map(rm => ({label: `${rm.item_code} - ${rm.name}`, value: rm.id}))} disabled={true} showSearch={true}/>
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
@@ -349,40 +454,51 @@ const PurchaseOrder =  () => {
                             }} style={{float: 'right', marginBottom: 15, marginTop: -15, marginRight: 10}}>Clear</Button>
                         </Form>
                         <Table style={{marginTop: 15}} dataSource={poItems} bordered columns={poColumns}/>
-                        <Form layout={'vertical'}>
+                        <Form form={prnForm} layout={'vertical'}>
                             <Row style={{marginTop: 20}} gutter={15}>
                                 <Col offset={12} span={12}>
-                                    <Form.Item label={'Total'}>
-                                        <Input disabled/>
+                                    <Form.Item label={'Total'} name={'grossTotal'} initialValue={grossTotal.toString()}>
+                                        <Input style={{textAlign:'right'}} disabled defaultValue={grossTotal.toString()}/>
                                     </Form.Item>
                                 </Col>
                                     <Col span={12}>
-                                        <Text style={{marginBottom: 10, marginRight: 10}}>Discount Type :</Text><br/>
-                                        <Radio.Group defaultValue={DiscountTypeEnum.VALUE}>
-                                            <Radio value={DiscountTypeEnum.PERCENTAGE}>Percentage</Radio>
-                                            <Radio value={DiscountTypeEnum.VALUE}>Amount</Radio>
-                                        </Radio.Group>
+                                        <Form.Item label={'Discount Type :'} name={'discountType'}>
+                                            <Radio.Group defaultValue={"1"} name={'discountType'} onChange={handleNetTotal}>
+                                                <Radio value={"0"}>Percentage</Radio>
+                                                <Radio value={"1"}>Amount</Radio>
+                                            </Radio.Group>
+                                            </Form.Item>
                                     </Col>
                                     <Col span={12}>
-                                        <Form.Item label={'Discount'}>
-                                            <Input/>
+                                        <Form.Item label={'Discount'} name={'discount'}>
+                                            <Input onChange={handleNetTotal}/>
                                         </Form.Item>
                                     </Col>
                                 <Col offset={12} span={12}>
-                                    <Form.Item label={'Tax'}>
-                                        <Select mode={'multiple'} allowClear/>
+                                    <Form.Item label={'Tax'} name={'tax'}>
+                                        <Select mode={'multiple'} allowClear onChange={handleNetTotal}>
+                                            {
+                                                taxTypes.map(tax => {
+                                                    return (
+                                                        <Select.Option value={tax.id}>
+                                                            {tax.name}
+                                                        </Select.Option>
+                                                    )
+                                                })
+                                            }
+                                        </Select>
                                     </Form.Item>
                                 </Col>
                                 <Col offset={12} span={12}>
-                                    <Form.Item label={'Net Total'}>
-                                        <Input disabled/>
+                                    <Form.Item label={'Net Total'} name={'netTotal'}>
+                                        <Input disabled style={{textAlign: 'right'}}/>
                                     </Form.Item>
                                 </Col>
                             </Row>
                         </Form>
                     </Col>
                     <div style={{width: '100%'}}>
-                        <Button style={{float: "right"}} type={'primary'}>Create PO</Button>
+                        <Button onClick={handlePoSubmit} style={{float: "right"}} type={'primary'}>Create PO</Button>
                         <Button style={{float: "right", marginRight: 10}}>Clear</Button>
                     </div>
                 </Row>

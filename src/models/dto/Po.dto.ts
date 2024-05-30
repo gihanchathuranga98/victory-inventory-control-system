@@ -1,23 +1,21 @@
 import {DiscountTypeEnum} from "../../enums/DiscountTypeEnum";
 
 export interface PoDto {
-    prnId: string;
-    supplierId: string;
-    specialComment: string;
-    deliveryLocation: string;
-    contactPerson: string;
-    supplierComment: string;
-    discount: number | string;
-    discountType: DiscountTypeEnum;
-    taxId: string[];
-    poItem: any[];
+    po_no: string | null;
+    supplier_id: string;
+    special_note?: string,
+    delivery_location: string,
+    currency?: string,
+    discount_type: string,
+    tax_type: number[],
+    discount?: number,
+    contact_person: string,
+    items: PoItemDto[];
 }
 
 interface PoItemDto {
-    id?:string;
-    poId?: string;
-    rmId: string;
-    qty: string | number;
-    pricePerUnit?: string | number;
-    prnItemId?: string;
+    rm_id: string,
+    qty: number,
+    price_per_unit: number,
+    prn_item_id: string
 }
