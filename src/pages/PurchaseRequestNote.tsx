@@ -1,10 +1,13 @@
 import Breadcrumb from "../components/Breadcrumb/Breadcrumb";
 import {Button, Card, Col, Form, Input, Row, Select, Table} from "antd";
 import AddNewPrnItem from "../components/modals/AddNewPrnItem";
-import {useContext, useState} from "react";
+import {ReactNode, useContext, useEffect, useState} from "react";
 import {AlertContext} from "../context/AlertContext";
-import rawMaterialService from "../services/RawMaterial.service";
 import RawMaterialService from "../services/RawMaterial.service";
+import OutsideUserService from "../services/OutsideUser.service";
+import {OutsideUserLevelEnum} from "../enums/OutsideUserLevel.enum";
+import SystemUserService from "../services/SystemUser.service";
+import {PrnService} from "../services/Prn.service";
 
 const PurchaseRequestNote = () => {
 
@@ -13,9 +16,38 @@ const PurchaseRequestNote = () => {
     const [prnForm] = Form.useForm();
 
     const rawMaterialService = new RawMaterialService();
+    const outsideUserService = new OutsideUserService();
+    const systemUserService = new SystemUserService();
+    const prnService = new PrnService();
 
     const [addNewItemOpen, setAddNewItemOpen] = useState<boolean>(false);
     const [prnItem, setPrnItem] = useState<any[]>([]);
+    const [outsideUsers, setOutsideUsers] = useState<string[]>([]);
+    const [systemUsers, setSystemUsers] = useState<string[]>([])
+
+    useEffect(() => {
+        console.log('PRN Item', prnItem);
+    }, [prnItem]);
+
+    useEffect(() => {
+        outsideUserService.getOutsideUsers(OutsideUserLevelEnum.EMPLOYEE)
+            .then(data => {
+                setOutsideUsers(data.map((user:any) => `${user?.initials === null ? '' : user?.initials} ${user?.firstname === null ? '' : user?.firstname} ${user?.secondname === null ? '' : user?.secondname}`))
+            })
+            .catch(e => {
+                error('Unexpected Error', 'Fetching users failed');
+            })
+
+        systemUserService.getAllSystemUsers()
+            .then(data => {
+
+            })
+            .catch(e => {
+                error('Unexpected Error', 'Fetching system users failed');
+            })
+        setSystemUsers(['Jayantha', 'Mayantha', 'Amayantha']);
+        // setOutsideUsers(['Gihan', 'Chathuranga', 'Attanayake']);
+    }, []);
 
     const prnColumns = [
         {
@@ -89,10 +121,31 @@ const PurchaseRequestNote = () => {
     }
 
     const handleCreatePrn = () => {
-        const {reqBy, remark, priority, authBy} = prnForm.getFieldsValue();
+        const {reqBy, remark, priority, authBy, prNo} = prnForm.getFieldsValue();
 
-        if(reqBy && authBy && priority){
-            // TODO: implement after the APIs are deliverd from Victory
+        const items = prnItem.map(item => {
+            return {
+                rm_id: item.id,
+                qty: +item.qty,
+                ordered_qty: 0,
+                estimated_price_per_unit: 0
+            }
+        })
+
+        if(priority && prNo){
+            if(items.length > 0){
+                prnService.createPrn({requested_by: reqBy, approved_by: authBy, priority_id: priority, remark, items, prn_no: prNo})
+                    .then(data => {
+                        success('Success', 'PRN has created Successfully');
+                        prnForm.resetFields();
+                        setPrnItem([]);
+                    })
+                    .catch(e => {
+                        warning('Unexpected Error Occurred', 'Please try again');
+                    })
+            }else{
+                warning('Empty Field', 'Please fill all of the required fields');
+            }
         }else{
             warning('Empty Field', 'Please fill all of the required fields');
         }
@@ -106,20 +159,40 @@ const PurchaseRequestNote = () => {
                     <Col offset={2} span={6}>
                         <div style={{width: '100%', borderRight: 'solid', paddingRight: 15, borderColor: '#E3E1D9', paddingBottom: 5}}>
                             <Form form={prnForm} layout={'vertical'}>
-                                <Form.Item label={'PRN No.'}>
-                                    <Input disabled/>
+                                <Form.Item label={'PRN No.'} name={'prNo'} rules={[{required: true}]}>
+                                    <Input/>
                                 </Form.Item>
                                 <Form.Item label={'Requested By'} name={'reqBy'}>
-                                    <Select options={[]}/>
+                                    <Select>
+                                        {
+                                            outsideUsers.map((user: string) => {
+                                                return (
+                                                    <Select.Option key={user}>
+                                                        {user}
+                                                    </Select.Option>
+                                                )
+                                            })
+                                        }
+                                    </Select>
                                 </Form.Item>
-                                <Form.Item label={'Remark'}>
+                                <Form.Item label={'Remark'} name={'remark'}>
                                     <Input/>
                                 </Form.Item>
                                 <Form.Item label={'Priority'} name={'priority'}>
-                                    <Select options={[{label: 'Urgent', value: 'urgent'}]} />
+                                    <Select options={[{label: 'Urgent', value: 1}]} />
                                 </Form.Item>
                                 <Form.Item label={'Authorized By'} name={'authBy'}>
-                                    <Select options={[]}/>
+                                    <Select>
+                                        {
+                                            systemUsers.map((user: string) => {
+                                                return (
+                                                    <Select.Option key={user}>
+                                                        {user}
+                                                    </Select.Option>
+                                                )
+                                            })
+                                        }
+                                    </Select>
                                 </Form.Item>
                             </Form>
                         </div>

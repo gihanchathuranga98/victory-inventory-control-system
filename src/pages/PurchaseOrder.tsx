@@ -321,44 +321,42 @@ const PurchaseOrder =  () => {
 
     const handlePoSubmit = () => {
         console.log('[poItems]', poItems)
-        const {supplier, specialComment, supplierComment, location, contactPerson, grossTotal, netTotal, discountType, discount, tax} = prnForm.getFieldsValue();
+        const {supplier, poNo, specialComment, supplierComment, location, contactPerson, grossTotal, netTotal, discountType, discount, tax} = prnForm.getFieldsValue();
+        console.log('Discount Type', discountType)
         const requestPayload: PoDto = {
-            supplierId: supplier,
-            specialComment: specialComment,
-            supplierComment: supplierComment,
-            deliveryLocation: location,
-            contactPerson: contactPerson,
-            discountType: discountType,
+            po_no: poNo,
+            supplier_id: supplier,
+            special_note: specialComment,
+            delivery_location: location,
+            contact_person: contactPerson,
+            discount_type: discountType || "1",
+            currency: 'LKR',
             discount: discount,
-            taxId: tax,
-            poItem: poItems.map(item => {
+            tax_type: tax,
+            items: poItems.map(item => {
                 return {
-                    rmId: item?.rmId,
-                    qty: item?.orderQty,
-                    pricePerUnit: item?.pricePerUnit,
-                    prnItemId: item?.prnItemId
+                    rm_id: String(item.rmId),
+                    qty: Number(item.orderQty),
+                    price_per_unit: Number(item.pricePerUnit) || 0,
+                    prn_item_id: String(item?.prnItemId)
                 }
             })
         }
 
-        console.log('[requestPayload]', requestPayload)
-        console.log('form values', prnForm.getFieldsValue())
 
-        // poService.createNewPO(requestPayload)
-        //     .then(data => {
-        //         success('PO Saved', 'PO has been saved successfully');
-        //         poItemForm.resetFields();
-        //         prnForm.resetFields();
-        //     })
-        //     .catch(e => {
-        //         error('Unexpected Error', 'Unable to save the PO');
-        //     })
-
-        success('PO Saved', 'PO has been saved successfully');
-        prnForm.resetFields();
-        poItemForm.resetFields();
-        setPrnItems([]);
-        setPoItems([]);
+        poService.createNewPO(requestPayload)
+            .then(data => {
+                success('PO Saved', 'PO has been saved successfully');
+                poItemForm.resetFields();
+                prnForm.resetFields();
+            })
+            .catch(e => {
+                error('Unexpected Error', 'Unable to save the PO');
+            })
+        // prnForm.resetFields();
+        // poItemForm.resetFields();
+        // setPrnItems([]);
+        // setPoItems([]);
     }
 
     return (
@@ -395,6 +393,11 @@ const PurchaseOrder =  () => {
                                                 <Select options={suppliers} showSearch={true}/>
                                             </Form.Item>
                                     </Col>
+                                    <Col span={12}>
+                                        <Form.Item label={'PO No.'} name={'poNo'}>
+                                            <Input/>
+                                        </Form.Item>
+                                    </Col>
                                 </Row>
                             </Form>
                             <Table loading={isPrnTableLoading} dataSource={prnItems} bordered scroll={{x: 1000}} columns={prnColumns}/>
@@ -406,8 +409,8 @@ const PurchaseOrder =  () => {
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>
-                                        <Form.Item label={'Supplier Comment'} name={'supplierComment'}>
-                                            <TextArea rows={4}/>
+                                        <Form.Item label={'Delivery Before'} name={'supplierComment'}>
+                                            <Input />
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>
@@ -433,7 +436,7 @@ const PurchaseOrder =  () => {
                             <Row gutter={15} style={{marginTop: 20, marginBottom: 20}}>
                                 <Col span={12}>
                                     <Form.Item name={'poItem'} label={'Item Name'}>
-                                        <Select onSelect={handleRmSelect} options={rawMaterials?.map(rm => ({label: `${rm.item_code} - ${rm.name}`, value: rm.id}))} disabled={!!pendingPoItem?.name} showSearch={true}/>
+                                        <Select onSelect={handleRmSelect} options={rawMaterials?.map(rm => ({label: `${rm.item_code} - ${rm.name}`, value: rm.id}))} disabled={true} showSearch={true}/>
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
@@ -460,9 +463,9 @@ const PurchaseOrder =  () => {
                                 </Col>
                                     <Col span={12}>
                                         <Form.Item label={'Discount Type :'} name={'discountType'}>
-                                            <Radio.Group defaultValue={1} name={'discountType'} onChange={handleNetTotal}>
-                                                <Radio value={0}>Percentage</Radio>
-                                                <Radio value={1}>Amount</Radio>
+                                            <Radio.Group defaultValue={"1"} name={'discountType'} onChange={handleNetTotal}>
+                                                <Radio value={"0"}>Percentage</Radio>
+                                                <Radio value={"1"}>Amount</Radio>
                                             </Radio.Group>
                                             </Form.Item>
                                     </Col>

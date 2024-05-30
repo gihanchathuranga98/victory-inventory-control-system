@@ -32,4 +32,22 @@ export class PrnService {
             return Promise.reject(e);
         }
     }
+
+    createPrn = async (prn: any) => {
+        try {
+            const res = await axios.post('/prn/add', {...prn});
+            return res.data;
+        }catch (e) {
+            return Promise.reject(e);
+        }
+    }
+
+    getPrn = async (prnId: string) => {
+        try {
+            const res = await axios.get(`/prn/${prnId}`)
+            return res.data;
+        }catch (e) {
+            return Promise.reject(e);
+        }
+    }
 }
