@@ -13,12 +13,22 @@ import RawMaterialService from "../services/RawMaterial.service";
 import {PrnService} from "../services/Prn.service";
 import {v4 as uuid} from "uuid";
 import TaxService from "../services/Tax.service";
+import GrnService from "../services/Grn.service";
+import GrnDto from "../models/dto/Grn.dto";
 
 
 enum GrnItemTypeEnum {
     PO_ITEM,
     FREE_ITEM,
     SERVICE_ITEM
+}
+
+enum DisplayValueChangeEventTypesEnum {
+    CHANGE_TOTAL,
+    CHANGE_DISCOUNT_TYPE,
+    CHANGE_DISCOUNT,
+    CHANGE_TAX_TYPES,
+    CHANGE_NET_TOTAL
 }
 
 const GoodReceiveNote = () => {
@@ -30,6 +40,7 @@ const GoodReceiveNote = () => {
     const rmService = new RawMaterialService();
     const prnService = new PrnService();
     const taxService = new TaxService();
+    const grnService = new GrnService();
 
     const {Text, Title} = Typography;
     const [tax, setTax] = useState<any[]>([])
@@ -41,10 +52,16 @@ const GoodReceiveNote = () => {
         total: 0,
         discount: 0,
         discountType: 2,
-        netTotal: 0
+        netTotal: 0,
+        tax_types: []
     })
 
     const {error, info, warning, success} = useContext(AlertContext);
+
+    useEffect(() => {
+        console.log('grnItems ==>', grnItems);
+        console.log('po ===>', po);
+    }, [po, grnItems]);
 
     useEffect(() => {
         poService.getAllPOs()
@@ -122,12 +139,11 @@ const GoodReceiveNote = () => {
                 {
                     item_code: selectedPoItem.rm_details.itemCode,
                     item_name: selectedPoItem.rm_details.name,
-                    po_qty: selectedPoItem.qty,
-                    received_qty: (+selectedPoItem.qty - +selectedPoItem.rm_details.reOrderQty),
+                    received_qty: 0,
                     item_type: GrnItemTypeEnum.PO_ITEM,
                     // pr_no: '',
                     uid: uuid(),
-                    prn_id: selectedPoItem.prn_item_id
+                    prn_item_id: selectedPoItem.prn_item_id
                 }
             ])
         })
@@ -291,7 +307,7 @@ const GoodReceiveNote = () => {
                         item_type: GrnItemTypeEnum.FREE_ITEM,
                         // pr_no: '',
                         uid: uuid(),
-                        prn_id: 'N/A'
+                        prn_item_id: 'N/A'
                     }
                 ])
             })
@@ -304,7 +320,7 @@ const GoodReceiveNote = () => {
         const prices = grnItems.map(item => {
             return {price: item.price, uid: item.uid, qty: item.received_qty};
         })
-        let total: number;
+        let total: number = 0;
         if(prices.length > 0){
             total = prices.map(item => (item.price * item.qty)).reduce((total, curr) => (+curr + +total));
             poForm.setFieldValue('total', total)
@@ -313,21 +329,108 @@ const GoodReceiveNote = () => {
         setDisplayValues(prevState => {
             return {...prevState, total: total}
         })
-
     }, [grnItems]);
 
+    // calculating net total
     useEffect(() => {
-        console.log('display values', displayValues)
+        let netTotal: number = 0;
+            console.log('display values ==> ', displayValues)
+        if(!Number.isNaN(+displayValues.total)){
+            netTotal += displayValues.total;
+        }
+
+        if (!Number.isNaN(+displayValues.discount)){
+            switch (displayValues.discountType) {
+                case 1:
+                    netTotal -= netTotal / 100 * displayValues.discount;
+                    break;
+
+                case 2:
+                    netTotal -= displayValues.discount;
+            }
+        }
+
+        if(displayValues.tax_types.length > 0){
+            const taxValue = getTaxValue(displayValues.tax_types);
+            netTotal += netTotal/100 * taxValue;
+        }
+
+        poForm.setFieldValue('netTotal', (netTotal).toFixed(2));
     }, [displayValues]);
+
+    const getTaxValue = (taxids: number[]) => {
+        return (taxids.map(taxId => {
+            return (tax.find(tax => tax.id === taxId)).value;
+        })).reduce((total, val)=> +total + +val);
+    }
+
+    const handleDisplayValuesChange = (event:any, eventType:DisplayValueChangeEventTypesEnum) => {
+
+        setDisplayValues((prevState) => {
+            switch (eventType) {
+                case DisplayValueChangeEventTypesEnum.CHANGE_DISCOUNT_TYPE:
+                    return {...prevState, discountType: event}
+
+                case DisplayValueChangeEventTypesEnum.CHANGE_DISCOUNT:
+                    return {...prevState, discount: event}
+
+                case DisplayValueChangeEventTypesEnum.CHANGE_TAX_TYPES:
+                    return {...prevState, tax_types: event}
+
+                default:
+                    return {...prevState}
+            }
+        })
+    }
+
+    const handleCreateGrn = () => {
+
+        const {grnNo, supInvNo, comment} = grnForm.getFieldsValue();
+        const {poId, discount} = poForm.getFieldsValue();
+
+        const payload: any = {
+            grn_no: grnNo,
+            po_id: poId,
+            supplier_inv_no: supInvNo,
+            comment: comment,
+            discount_type: displayValues.discountType || "2",
+            tax_type: displayValues.tax_types,
+            discount: discount,
+            items: grnItems.map(async (item) => {
+                return {
+                    rm_id: await getRmId(item.prn_item_id),
+                    qty: item?.received_qty,
+                    price_per_unit: item.price,
+                    recieved_type: item.item_type
+                }
+            })
+        }
+
+        grnService.createNewGrn({...payload})
+            .then(data => {
+                success('Success', 'GRN created successfully')
+            })
+            .catch(e => {
+                error('Unexpected Error', 'Create new GRN failed')
+            })
+    }
+
+    const getRmId = async (prnItemId: string) => {
+        if(prnItemId !== 'N/A'){
+            const res = await prnService.getPrnItem(prnItemId);
+            console.log('res.rm_id === ', res.rm_id);
+            return res.rm_id;
+        }
+    }
 
     return (
         <>
             <Breadcrumb items={[{title: 'Home', href: '/'}, {title: 'Good Receive Note'}]}/>
             <Card title={'Good Receive Note'}>
                 <div style={{borderBottom: 'solid', borderColor: '#E3E1D9', borderWidth: 1, marginBottom: 25}}>
-                    <Form>
-                        <Form.Item style={{width: 300}} label={'GRN Id'}>
-                            <Input disabled/>
+                    <Form form={grnForm}>
+                        <Form.Item name={'grnNo'} style={{width: 300}} label={'GRN No.'}>
+                            <Input/>
                         </Form.Item>
                     </Form>
                 </div>
@@ -364,15 +467,15 @@ const GoodReceiveNote = () => {
                                     id: item.id
                                 }
                             })} bordered/>
-                            <Form layout={'vertical'}>
+                            <Form form={grnForm} layout={'vertical'}>
                                 <Row gutter={15} style={{marginTop: 20}}>
                                     <Col span={12}>
-                                        <Form.Item label={'Comment'}>
+                                        <Form.Item name={'comment'} label={'Comment'}>
                                             <TextArea rows={4}/>
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>
-                                        <Form.Item label={'Supplier Invoice No.'}>
+                                        <Form.Item name={'supInvNo'} label={'Supplier Invoice No.'}>
                                             <Input/>
                                         </Form.Item>
                                     </Col>
@@ -433,23 +536,25 @@ const GoodReceiveNote = () => {
                                 </Col>
                                 <Col span={12}>
                                     <Text style={{marginBottom: 10, marginRight: 10}}>Discount Type :</Text><br/>
-                                    <Radio.Group name={'discountType2'} defaultValue={2}>
+                                    <Radio.Group name={'discountType2'} defaultValue={2} onChange={(e)=>{handleDisplayValuesChange(e.target.value, DisplayValueChangeEventTypesEnum.CHANGE_DISCOUNT_TYPE)}}>
                                         <Radio value={1}>Percentage</Radio>
                                         <Radio value={2}>Amount</Radio>
                                     </Radio.Group>
                                 </Col>
                                 <Col  span={12}>
                                     <Form.Item name={'discount'} label={'Discount'}>
-                                        <Input/>
+                                        <Input onChange={(e)=>{handleDisplayValuesChange(e.target.value, DisplayValueChangeEventTypesEnum.CHANGE_DISCOUNT)}}/>
                                     </Form.Item>
                                 </Col>
                                 <Col offset={12} span={12}>
                                     <Form.Item label={'Tax'}>
-                                        <Select options={tax.map(taxItem => ({value: taxItem.id, label: taxItem.name}))} mode={'multiple'} allowClear/>
+                                        <Select options={tax.map(taxItem => ({value: taxItem.id, label: taxItem.name}))} mode={'multiple'} allowClear onChange={(e)=> {
+                                            handleDisplayValuesChange(e, DisplayValueChangeEventTypesEnum.CHANGE_TAX_TYPES);
+                                        }}/>
                                     </Form.Item>
                                 </Col>
                                 <Col offset={12} span={12}>
-                                    <Form.Item label={'Net Total'}>
+                                    <Form.Item name={'netTotal'} label={'Net Total'}>
                                         <Input disabled/>
                                     </Form.Item>
                                 </Col>
@@ -458,7 +563,7 @@ const GoodReceiveNote = () => {
                     </Col>
                 </Row>
                 <div style={{width: '100%'}}>
-                    <Button style={{float: "right"}} type={'primary'}>Create GRN</Button>
+                    <Button style={{float: "right"}} onClick={handleCreateGrn} type={'primary'}>Create GRN</Button>
                     <Button style={{float: "right", marginRight: 10}}>Clear</Button>
                 </div>
             </Card>
