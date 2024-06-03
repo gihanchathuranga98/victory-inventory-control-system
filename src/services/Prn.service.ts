@@ -50,4 +50,13 @@ export class PrnService {
             return Promise.reject(e);
         }
     }
+
+    getPrnItem = async (prnItemId: string) => {
+        try {
+            const res = await axios.get(`/prn/prn-item/${prnItemId}`);
+            return res.data;
+        }catch (e) {
+            return Promise.reject(e);
+        }
+    }
 }
