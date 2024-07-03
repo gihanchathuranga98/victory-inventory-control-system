@@ -12,6 +12,24 @@ class GrnService {
         }
     }
 
+    getGrnBuId = async (id: string) => {
+        try {
+            const res = await axios.get(`/grn/${id}`);
+            return res.data;
+        }catch (e) {
+            return Promise.reject(e);
+        }
+    }
+
+    getAllGrns = async () => {
+        try {
+            const res = await axios.get('/grn/all');
+            return res.data;
+        }catch (e) {
+            return Promise.reject(e)
+        }
+    }
+
 }
 
 export default GrnService;

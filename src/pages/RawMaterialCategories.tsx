@@ -56,17 +56,17 @@ const RawMaterialCategories = () => {
     }
 
     const handleFinish = ({name, code}: {name: string, code: string}) => {
-        setCategories((prevState: any[]) => {
-            return prevState.concat([{name, id: uuid()}]);
-        })
-        // rawMaterialService.addNewRMCategory(name, code)
-        //     .then(data => {
-        //         success('Request Success', 'New RM category has been added')
-        //         loadRMCategories();
-        //     })
-        //     .catch(e =>{
-        //         error('Request Failed', 'New RM category creation failed')
-        //     })
+        // setCategories((prevState: any[]) => {
+        //     return prevState.concat([{name, id: uuid()}]);
+        // })
+        rawMaterialService.addNewRMCategory(name, code)
+            .then(data => {
+                success('Request Success', 'New RM category has been added')
+                loadRMCategories();
+            })
+            .catch(e =>{
+                error('Request Failed', 'New RM category creation failed')
+            })
         form.resetFields();
     }
 
