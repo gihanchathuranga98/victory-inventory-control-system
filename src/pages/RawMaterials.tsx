@@ -6,19 +6,42 @@ import {useContext, useEffect, useState} from "react";
 import RawMaterialService from "../services/RawMaterial.service";
 import {AlertContext} from "../context/AlertContext";
 import {RawMaterialInterface} from "../models/interfaces/RawMaterial.interface";
+import {UomService} from "../services/Uom.service";
 
 const RawMaterials = () => {
 
     const rawMaterialService = new RawMaterialService();
+    const uomService = new UomService();
 
     const {error, success} = useContext(AlertContext);
     const {confirm} = Modal;
 
     const [addNewRmModal, setAddNewRmModal] = useState<boolean>(false);
     const [rawMaterials, setRawMaterials] = useState<any[]>([])
+    const [rawMaterialCategories, setRawMaterialCategories] = useState<any[]>([])
+    const [uoms, setUoms] = useState<any[]>([]);
 
     useEffect(() => {
         loadRawMaterials();
+
+        rawMaterialService.getAllRMCategories()
+            .then(data => {
+                setRawMaterialCategories(data);
+            })
+            .catch(e => {
+                error('Unexpected Error', 'Cannot fetch RM Categories');
+            })
+
+        uomService.getAllUoms()
+            .then(data => {
+                setUoms(data);
+            })
+            .catch(e => {
+                error('Unexpected Error', 'Cannot fetch UOMs');
+            })
+
+
+
     }, []);
 
     const loadRawMaterials = () => {
@@ -104,7 +127,7 @@ const RawMaterials = () => {
                 </Form>
                 <Table bordered dataSource={rawMaterials} columns={columns}/>
             </Card>
-            <AddNewRawMaterial onOk={handleAddRm} onCancel={() => {setAddNewRmModal(false)}} open={addNewRmModal}/>
+            <AddNewRawMaterial uom={uoms} rawmCategories={rawMaterialCategories} onOk={handleAddRm} onCancel={() => {setAddNewRmModal(false)}} open={addNewRmModal}/>
         </>
     )
 }
