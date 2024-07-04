@@ -4,7 +4,7 @@ class SystemUserService {
 
     getAllSystemUsers = async () => {
         try {
-            const res = await axios.get('system-users');
+            const res = await axios.get('/user/all');
             return res.data;
         }catch (e) {
             return Promise.reject(e);

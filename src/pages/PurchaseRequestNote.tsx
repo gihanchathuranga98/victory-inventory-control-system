@@ -40,7 +40,7 @@ const PurchaseRequestNote = () => {
 
         systemUserService.getAllSystemUsers()
             .then(data => {
-
+                setSystemUsers(data);
             })
             .catch(e => {
                 error('Unexpected Error', 'Fetching system users failed');
@@ -123,6 +123,8 @@ const PurchaseRequestNote = () => {
     const handleCreatePrn = () => {
         const {reqBy, remark, priority, authBy, prNo} = prnForm.getFieldsValue();
 
+        console.log('authBy', authBy);
+
         const items = prnItem.map(item => {
             return {
                 rm_id: item.id,
@@ -167,7 +169,7 @@ const PurchaseRequestNote = () => {
                                         {
                                             outsideUsers.map((user: string) => {
                                                 return (
-                                                    <Select.Option key={user}>
+                                                    <Select.Option value={user} key={user}>
                                                         {user}
                                                     </Select.Option>
                                                 )
@@ -184,10 +186,10 @@ const PurchaseRequestNote = () => {
                                 <Form.Item label={'Authorized By'} name={'authBy'}>
                                     <Select>
                                         {
-                                            systemUsers.map((user: string) => {
+                                            systemUsers.map((user: any) => {
                                                 return (
-                                                    <Select.Option key={user}>
-                                                        {user}
+                                                    <Select.Option value={user.user_id} key={user.user_id}>
+                                                        {`${user.fname} ${user.lname}`}
                                                     </Select.Option>
                                                 )
                                             })

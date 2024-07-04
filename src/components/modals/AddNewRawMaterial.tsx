@@ -8,10 +8,12 @@ import {RawMaterialInterface} from "../../models/interfaces/RawMaterial.interfac
 interface AddNewRawMaterialProps extends BaseModalPropsInterface{
     onOk?: (data: RawMaterialInterface)=>void;
     onCancel: ()=>void;
-    open: boolean
+    open: boolean,
+    rawmCategories: any[],
+    uom: any[]
 }
 
-const AddNewRawMaterial = ({onOk, onCancel, open}: AddNewRawMaterialProps) => {
+const AddNewRawMaterial = ({onOk, onCancel, open, rawmCategories, uom}: AddNewRawMaterialProps) => {
 
     const [rmCategories, setRmCategories] = useState([
         {
@@ -60,7 +62,12 @@ const AddNewRawMaterial = ({onOk, onCancel, open}: AddNewRawMaterialProps) => {
                     <Form.Item name={'categoryId'} label={'RM Category'}>
                         <Select
                         showSearch={true}
-                        options={rmCategories}
+                        options={rawmCategories.map(rm => {
+                            return {
+                                label: rm.name,
+                                value: rm.id
+                            }
+                        })}
                         />
                     </Form.Item>
                     <Form.Item name={'code'} label={'Item Code'}>
@@ -73,7 +80,9 @@ const AddNewRawMaterial = ({onOk, onCancel, open}: AddNewRawMaterialProps) => {
                         <TextArea rows={4}/>
                     </Form.Item>
                     <Form.Item name={'unitId'} label={'Unit'}>
-                        <Select options={unitOptions}/>
+                        <Select options={uom.map(u => {
+                            return {label: u.name, value: u.id}
+                        })}/>
                     </Form.Item>
                     <Form.Item name={'reOrderLevel'} label={'Re-Order Level'}>
                         <Input/>

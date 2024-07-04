@@ -36,7 +36,7 @@ const Suppliers = () => {
                 </Form>
                 <Table bordered columns={columns}/>
             </Card>
-            <AddNewRawMaterial onCancel={() => {setAddNewRmModal(false)}} open={addNewRmModal}/>
+            <AddNewRawMaterial uom={[]} rawmCategories={[]} onCancel={() => {setAddNewRmModal(false)}} open={addNewRmModal}/>
         </>
     )
 }

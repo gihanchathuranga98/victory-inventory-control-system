@@ -383,28 +383,41 @@ const GoodReceiveNote = () => {
         })
     }
 
-    const handleCreateGrn = () => {
+    const handleCreateGrn = async () => {
 
         const {grnNo, supInvNo, comment} = grnForm.getFieldsValue();
         const {poId, discount} = poForm.getFieldsValue();
+
+        const getGRNItems = async () => {
+
+            const items = [];
+
+            for(const item of grnItems){
+                const rm_id = await getRmId(item.prn_item_id);
+                items.push({
+                    rm_id: rm_id,
+                    qty: item?.received_qty,
+                    price_per_unit: Number(item.price),
+                    recieved_type: `${item.item_type}`
+                })
+            }
+            return items;
+        }
 
         const payload: any = {
             grn_no: grnNo,
             po_id: poId,
             supplier_inv_no: supInvNo,
             comment: comment,
-            discount_type: displayValues.discountType || "2",
+            discount_type: `${displayValues.discountType}` || "2",
             tax_type: displayValues.tax_types,
-            discount: discount,
-            items: grnItems.map(async (item) => {
-                return {
-                    rm_id: await getRmId(item.prn_item_id),
-                    qty: item?.received_qty,
-                    price_per_unit: item.price,
-                    recieved_type: item.item_type
-                }
-            })
+            discount: `${discount}`,
+            items: await getGRNItems()
         }
+
+
+
+        console.log('payload ======> grn create', payload);
 
         grnService.createNewGrn({...payload})
             .then(data => {
