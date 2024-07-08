@@ -1,4 +1,4 @@
-import {Button, Card, Col, Form, Input, Radio, Row, Select, Space, Table} from "antd";
+import {Button, Card, Col, DatePicker, Form, Input, Radio, Row, Select, Space, Table} from "antd";
 import Breadcrumb from "../components/Breadcrumb/Breadcrumb";
 import TextArea from "antd/es/input/TextArea";
 import {Typography} from "antd";
@@ -410,7 +410,7 @@ const PurchaseOrder =  () => {
                                     </Col>
                                     <Col span={12}>
                                         <Form.Item label={'Delivery Before'} name={'supplierComment'}>
-                                            <Input />
+                                            <DatePicker style={{width: '100%'}} />
                                         </Form.Item>
                                     </Col>
                                     <Col span={12}>

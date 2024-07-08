@@ -59,7 +59,7 @@ const RawMaterialCategories = () => {
         // setCategories((prevState: any[]) => {
         //     return prevState.concat([{name, id: uuid()}]);
         // })
-        rawMaterialService.addNewRMCategory(name, code)
+        rawMaterialService.addNewRMCategory(name)
             .then(data => {
                 success('Request Success', 'New RM category has been added')
                 loadRMCategories();

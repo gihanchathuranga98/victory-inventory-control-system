@@ -88,9 +88,9 @@ class RawMaterialService {
         }
     }
 
-    addNewRMCategory = async (name: string, code: string) => {
+    addNewRMCategory = async (name: string) => {
         try {
-            const res = await axios.post('', {name})
+            const res = await axios.post('/raw-material/add-category', {name})
             return res.data;
         }catch (e) {
             return Promise.reject(e);
@@ -99,7 +99,7 @@ class RawMaterialService {
 
     removeRMCategory = async (id: string) => {
         try {
-            const res = await axios.delete(`/url/${id}`)
+            const res = await axios.delete(`/raw-material/category/${id}`)
             return res.data;
         }catch (e) {
             return Promise.reject(e)

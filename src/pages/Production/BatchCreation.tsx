@@ -2,7 +2,8 @@ import Breadcrumbs from "../../components/Breadcrumb/Breadcrumb";
 import {Button, Card, Col, DatePicker, Form, Input, Row, Select, Table} from "antd";
 import {BatchService} from "../../services/Batch.service";
 import RawMaterialService from "../../services/RawMaterial.service";
-import {useEffect, useState} from "react";
+import {useContext, useEffect, useState} from "react";
+import {AlertContext} from "../../context/AlertContext";
 
 const BatchCreation = () => {
 
@@ -16,6 +17,8 @@ const BatchCreation = () => {
 
     const [itemForm] = Form.useForm();
     const [batchForm] = Form.useForm();
+
+    const {error, success} = useContext(AlertContext);
 
 
     useEffect(() => {
@@ -131,9 +134,23 @@ const BatchCreation = () => {
         batchService.createNewBatch({addBatchDto: {is_complete: false, name: values.name, end_date: new Date(`${values.end_date.year()}-${values.start_date.month() + 1}-${values.start_date.day()}`).toISOString(), start_date: new Date(`${values.start_date.year()}-${values.start_date.month() + 1}-${values.start_date.day()}`).toISOString()}, batchItems: batchItems})
             .then(data => {
                 console.log('success')
+                success('Success', 'Batch created successfully');
             })
             .catch(e => {
                 console.log(e);
+                error('Unexpected Error', 'Batch creation failed');
+            })
+            .finally(()=> {
+                batchForm.resetFields();
+                itemForm.resetFields();
+                setBatchItems([])
+                batchService.getAllBatches()
+                    .then(data => {
+                        setBatches(data);
+                    })
+                    .catch(e => {
+                        console.log(e);
+                    })
             })
     }
 
