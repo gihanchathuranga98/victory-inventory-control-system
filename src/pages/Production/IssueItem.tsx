@@ -1,13 +1,16 @@
 import Breadcrumbs from "../../components/Breadcrumb/Breadcrumb";
 import {Button, Card, Col, Form, Input, Row, Select, Table} from "antd";
-import {useEffect, useState} from "react";
+import {useContext, useEffect, useState} from "react";
 import {BatchService} from "../../services/Batch.service";
 import RawMaterialService from "../../services/RawMaterial.service";
 import OutsideUserService from "../../services/OutsideUser.service";
 import {OutsideUserLevelEnum} from "../../enums/OutsideUserLevel.enum";
 import {IssueService} from "../../services/Issue.service";
+import {AlertContext} from "../../context/AlertContext";
 
 const IssueItem = () => {
+
+    const {error, success} = useContext(AlertContext);
 
     const [issueForm] = Form.useForm();
     const [rmForm] = Form.useForm();
@@ -134,6 +137,13 @@ const IssueItem = () => {
             })
             .catch(e => {
                 console.log(e);
+                error('Unexpected Error', 'Issue note creation failed');
+            })
+            .finally(() => {
+                success('Success', 'Issue note created successfully');
+                setSelectedRawMaterials([]);
+                rmForm.resetFields();
+                issueForm.resetFields();
             })
 
     }
