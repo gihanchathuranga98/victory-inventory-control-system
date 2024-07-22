@@ -55,6 +55,7 @@ const GoodReceiveNote = () => {
         netTotal: 0,
         tax_types: []
     })
+    const [nextId, setNextId] = useState<number>()
 
     const {error, info, warning, success} = useContext(AlertContext);
 
@@ -62,6 +63,15 @@ const GoodReceiveNote = () => {
         console.log('grnItems ==>', grnItems);
         console.log('po ===>', po);
     }, [po, grnItems]);
+
+    const getNextId = async () => {
+        grnService.getNextId()
+            .then(data => {
+                setNextId(data);
+                grnForm.setFieldValue('grnNo', `GRN-${data}`);
+            })
+            .catch(e =>{})
+    }
 
     useEffect(() => {
         poService.getAllPOs()
@@ -79,6 +89,9 @@ const GoodReceiveNote = () => {
             .catch(e => {
                 error('Unexpected Error', 'Unable to fetch PO data');
             })
+
+        getNextId()
+
     }, []);
 
     const poColumns = [
@@ -260,23 +273,35 @@ const GoodReceiveNote = () => {
         const selectedPo: any = po.find((item: any) => {
             return poId === item.id;
         })
+        console.log('selected po', selectedPo)
         poForm.setFieldValue('supplier', selectedPo.supplier.name);
-        const selectedPoItemDetails = new Promise(async (resolve, reject) => {
-            await selectedPo.po_item.map(async (item: any) => {
-                const rmItem = await rmService.getOneRawMaterial(item.rm_id);
-                console.log('rmItem', rmItem);
-                if(rmItem){
-                    resolve({...item, rm_details: rmItem});
+        // const selectedPoItemDetails = new Promise(async (resolve, reject) => {
+        //     await selectedPo.po_item.map(async (item: any) => {
+        //         const rmItem = await rmService.getOneRawMaterial(item.rm_id);
+        //         console.log('rmItem', rmItem);
+        //         if(rmItem){
+        //             resolve({...item, rm_details: rmItem});
+        //         }else{
+        //             reject(rmItem);
+        //         }
+        //     })
+        // })
+
+        const selectedPoItemDetails = selectedPo.po_item.map(async (item:any) =>{
+            return new Promise(async (resolve, reject)=>{
+                const rm = await rmService.getOneRawMaterial(item.rm_id);
+                if(rm){
+                    console.log('raw material', rm)
+                    resolve({...item, rm_details: rm});
                 }else{
-                    reject(rmItem);
+                    reject(rm);
                 }
             })
         })
-        console.log('selectePoItemDetaild', selectedPoItemDetails)
 
-        Promise.all([selectedPoItemDetails])
+        Promise.all(selectedPoItemDetails)
             .then((data: any[]) => {
-                console.log(data)
+                console.log('after promise all', data)
                 setSelectedPoItems(data);
             })
             .catch(e => {
@@ -405,7 +430,7 @@ const GoodReceiveNote = () => {
         }
 
         const payload: any = {
-            grn_no: grnNo,
+            grn_no: nextId,
             po_id: poId,
             supplier_inv_no: supInvNo,
             comment: comment,
@@ -426,6 +451,10 @@ const GoodReceiveNote = () => {
             .catch(e => {
                 error('Unexpected Error', 'Create new GRN failed')
             })
+            .finally(()=>{
+                getNextId()
+                grnForm.setFieldValue('grnNo', `GRN-${nextId}`);}
+            )
     }
 
     const getRmId = async (prnItemId: string) => {
@@ -443,7 +472,7 @@ const GoodReceiveNote = () => {
                 <div style={{borderBottom: 'solid', borderColor: '#E3E1D9', borderWidth: 1, marginBottom: 25}}>
                     <Form form={grnForm}>
                         <Form.Item name={'grnNo'} style={{width: 300}} label={'GRN No.'}>
-                            <Input/>
+                            <Input disabled={true}/>
                         </Form.Item>
                     </Form>
                 </div>
@@ -471,11 +500,11 @@ const GoodReceiveNote = () => {
                             </Form>
                             <Table columns={poColumns} dataSource={selectedPoItems.map((item: any) =>{
                                 return {
-                                    itemCode: item.rm_details.itemCode,
-                                    name: item.rm_details.name,
+                                    itemCode: item.rm_details?.itemCode,
+                                    name: item.rm_details?.name,
                                     poQty: item.qty,
-                                    receivedQty: item.rm_details.reOrderQty,
-                                    balanceQty: (+item.qty - +item.rm_details.reOrderQty),
+                                    receivedQty: item.rm_details?.reOrderQty,
+                                    balanceQty: (+item.qty - +item.rm_details?.reOrderQty),
                                     prNo: item.prn_item_id,
                                     id: item.id
                                 }
@@ -494,7 +523,7 @@ const GoodReceiveNote = () => {
                                     </Col>
                                 </Row>
                             </Form>
-                            <Title level={5}>Previous GRNs for this PO</Title>
+                            {/*<Title level={5}>Previous GRNs for this PO</Title>*/}
                             <Row gutter={15}>
                                 {/*<Col span={8}>*/}
                                 {/*    <Card style={{textAlign: "center", backgroundColor: '#E3E1D9', padding: -20}}>*/}

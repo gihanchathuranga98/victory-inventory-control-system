@@ -1,11 +1,15 @@
 import Breadcrumb from "../components/Breadcrumb/Breadcrumb";
-import {Button, Card, Col, Form, Input, Row, Select, Table, Tabs, Typography} from "antd";
+import {Button, Card, Col, Form, Input, Row, Select, Table, Typography} from "antd";
 import TextArea from "antd/es/input/TextArea";
 import GrnItem from "../components/SrnItemTypes/GrnItem";
 import FreeItems from "../components/SrnItemTypes/FreeItems";
 import GrnService from "../services/Grn.service";
-import {useEffect, useState} from "react";
+import {useContext, useEffect, useState} from "react";
 import RawMaterialService from "../services/RawMaterial.service";
+import OutsideUserService from "../services/OutsideUser.service";
+import {OutsideUserLevelEnum} from "../enums/OutsideUserLevel.enum";
+import {SrnService} from "../services/Srn.service";
+import {AlertContext} from "../context/AlertContext";
 
 enum GrnItemTypeEnum {
     PO_ITEM,
@@ -21,8 +25,14 @@ const SupplierReturnNote = () => {
 
     const {Title} = Typography;
 
+    const {error, success} = useContext(AlertContext);
+
     const grnService = new GrnService();
     const rmService = new RawMaterialService();
+    const outsideUserService = new OutsideUserService();
+    const srnService = new SrnService();
+
+    const [outSideUsers, setOutSideUsers] = useState<any[]>()
 
     useEffect(() => {
         grnService.getAllGrns()
@@ -33,6 +43,12 @@ const SupplierReturnNote = () => {
             .catch(e => {
 
             })
+
+        outsideUserService.getOutsideUsers(OutsideUserLevelEnum.EMPLOYEE)
+            .then(data => {
+                setOutSideUsers(data);
+            })
+            .catch(e => {})
     }, []);
 
     useEffect(() => {
@@ -158,7 +174,7 @@ const SupplierReturnNote = () => {
                     return rm.id === value;
                 })
 
-                return rmObj?.item_name;
+                return rmObj?.name;
             }
         },
         {
@@ -171,8 +187,22 @@ const SupplierReturnNote = () => {
             title: 'Returning Qty',
             dataIndex: 'returnQty',
             render: (value: string, record: any)=>{
+                console.log('record', record)
                 return (
-                    <Input value={value} style={{width: '100%'}}/>
+                    <Input onChange={(e)=>{handleInputChange(record.id, e.target.value, 'RTN_QTY')}} value={value} style={{width: '100%'}}/>
+                )
+            }
+        },
+        {
+            key: '7',
+            title: 'Reason',
+            dataIndex: 'reason',
+            width: '100',
+            render: (value: string, record: any)=>{
+                return (
+                    <Select onChange={(e)=>{handleReasonChange(e, record.id)}} style={{width: '150px'}}>
+                        <Select.Option value={'Manufacture Defect'}>Manufacture Defect</Select.Option>
+                    </Select>
                 )
             }
         },
@@ -196,16 +226,128 @@ const SupplierReturnNote = () => {
             key: 'price',
         },
         {
+            title: 'Discount',
+            dataIndex: 'discount',
+            key: 'discount',
+            render: (value: string, record: any) => {
+                return <Input onChange={(e)=>{handleInputChange(record.id, e.target.value, 'DISCOUNT')}} style={{width: '150'}}/>
+            }
+        },
+        {
+            title: 'Taxes (Amount)',
+            dataIndex: 'Taxes',
+            key: 'taxes',
+            render: (value: string, record: any) => {
+                return <Input onChange={(e)=>{handleInputChange(record.id, e.target.value, 'TAX')}} style={{width: '150'}}/>
+            }
+        },
+        {
+            title: 'Return By',
+            dataIndex: 'returnBy',
+            render: (value:string, record:any) => {
+                return <Select onSelect={(e)=>{handleRequestByChange(e, record.id)}} options={outSideUsers?.map(user => {
+                    return {label: user.name, value: user.name}
+                })} style={{minWidth: '200px'}}/>
+            }
+        },
+        {
             key: '6',
             title: 'Action',
-            dataIndex: 'uid',
+            dataIndex: 'id',
             render: (value: string, record: any) =>{
                 return (
-                    <Button danger type={'primary'} >Remove</Button>
+                    <Button danger onClick={()=>{handleRemoveItem(value)}} type={'primary'} >Remove</Button>
                 )
             }
         }
     ]
+
+    const handleRemoveItem = (id: string) => {
+        setSrnItems(prevState => {
+            return prevState.filter(item => item.id !== id);
+        })
+    }
+
+    const handleRequestByChange = (name: string, id: string) => {
+        setSrnItems(prevState => {
+            return prevState.map(item => {
+                if(item.id === id){
+                    return {...item, requestedBy: name}
+                }
+            })
+        })
+    }
+
+    const handleInputChange = (id: string, value: any, type: string) => {
+        console.log('handleInputChange', id, value, type)
+        setSrnItems((prevState: any[]): any[] => {
+
+            const newVal =  prevState.map(item => {
+                if(item.id === id) {
+                    console.log('in item.id')
+                        switch (type) {
+                            case 'TAX':
+                                return {...item, tax: value}
+
+                            case 'DISCOUNT':
+                                return {...item, discount: value}
+
+                            case 'RTN_QTY':
+                                console.log('came to return qty')
+                                return {...item, returnQty: value}
+
+                            default:
+                                console.log('came to default')
+                                return {...item}
+                        }
+                }
+            })
+
+            console.log('newVal', newVal)
+
+            return newVal
+        })
+
+    }
+
+    const handleReasonChange = (reason: any, id: string) => {
+        console.log('reason', reason)
+        srnItems.forEach(item => {
+            if(item.id === id){
+                item.reason = reason;
+            }
+        })
+    }
+
+    const handleSrnSubmit = () => {
+
+        const {srn_no, grn_id, comment} = srnForm.getFieldsValue();
+
+        const payload = {
+            srn_no: srn_no,
+            grn_id: grn_id,
+            comment: comment,
+            items: srnItems.map(item => {
+                return {
+                    rm_id: item.rm_id,
+                    qty: item.returnQty,
+                    reason: item.reason,
+                    returned_by: item.requestedBy,
+                    discount: item.discount
+                }
+            })
+        }
+
+        srnService.createNewSrn(payload)
+            .then(data => {
+                success('Success', 'SRN has been created.')
+                srnForm.resetFields();
+                setSrnItems([]);
+            })
+            .catch(e =>{
+                error('Unexpected Error', 'Please Retry')
+            })
+    }
 
     return (
         <>
@@ -213,7 +355,7 @@ const SupplierReturnNote = () => {
             <Card title={'Supplier Return Note'}>
                 <div style={{borderBottom: 'solid', borderWidth: 1, borderColor: '#E3E1D9'}}>
                     <Form form={srnForm}>
-                        <Form.Item name={'srnCode'} style={{width: 400}} label={'SRN Code'}>
+                        <Form.Item name={'srn_no'} style={{width: 400}} label={'SRN Code'}>
                             <Input/>
                         </Form.Item>
                     </Form>
@@ -223,8 +365,8 @@ const SupplierReturnNote = () => {
                         <div style={{borderRight: 'solid', borderWidth: 1, borderColor: '#E3E1D9', width: '100%', paddingRight: 15, marginRight: 15, paddingBottom: 30}}>
                             <Row>
                                 <Col span={12}>
-                                    <Form layout={'vertical'}>
-                                        <Form.Item name={'grnId'} label={'GRN Id'}>
+                                    <Form form={srnForm} layout={'vertical'}>
+                                        <Form.Item name={'grn_id'} label={'GRN Id'}>
                                             <Select showSearch onChange={handleGRNChange} options={grns.map(grn => {
                                                 return {
                                                     value: grn.id,
@@ -243,7 +385,7 @@ const SupplierReturnNote = () => {
                                     id:item.id
                                 }
                             })} columns={grnItemTableColumns} bordered/>
-                            <Form layout={'vertical'}>
+                            <Form form={srnForm} layout={'vertical'}>
                                 <Row gutter={15} style={{marginTop: 20}}>
                                     <Col span={12}>
                                         <Form.Item name={'comment'} label={'Comment'}>
@@ -257,7 +399,7 @@ const SupplierReturnNote = () => {
                                     </Col>
                                 </Row>
                             </Form>
-                            <Title level={5}>Previous GRNs for this PO</Title>
+                            {/*<Title level={5}>Previous GRNs for this PO</Title>*/}
                             <Row gutter={15}>
                                 {/*<Col span={8}>*/}
                                 {/*    <Card style={{textAlign: "center", backgroundColor: '#E3E1D9', padding: -20}}>*/}
@@ -280,6 +422,11 @@ const SupplierReturnNote = () => {
                         <Col span={12}>
                             <Table columns={srnItemColumns} dataSource={srnItems} scroll={{x: 500}}  style={{marginTop: 30}} bordered/>
                         </Col>
+                        <div style={{width: '100%', marginTop: 15}}>
+                            <Form.Item>
+                                <Button onClick={handleSrnSubmit} style={{float: 'right', marginLeft: 15}} type={'primary'}>Save SRN</Button>
+                            </Form.Item>
+                        </div>
                     </Row>
             </Card>
         </>

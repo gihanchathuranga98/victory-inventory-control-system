@@ -24,10 +24,22 @@ const PurchaseRequestNote = () => {
     const [prnItem, setPrnItem] = useState<any[]>([]);
     const [outsideUsers, setOutsideUsers] = useState<string[]>([]);
     const [systemUsers, setSystemUsers] = useState<string[]>([])
+    const [prnId, setPrnId] = useState<number | string>();
 
     useEffect(() => {
         console.log('PRN Item', prnItem);
     }, [prnItem]);
+
+    const getNextid = () :void => {
+        prnService.getNextId()
+            .then(data => {
+                setPrnId(data);
+                prnForm.setFieldValue('prNo', `PRN-${data}`)
+            })
+            .catch(e =>{
+
+            })
+    }
 
     useEffect(() => {
         outsideUserService.getOutsideUsers(OutsideUserLevelEnum.EMPLOYEE)
@@ -37,6 +49,8 @@ const PurchaseRequestNote = () => {
             .catch(e => {
                 error('Unexpected Error', 'Fetching users failed');
             })
+
+        getNextid();
 
         systemUserService.getAllSystemUsers()
             .then(data => {
@@ -136,11 +150,12 @@ const PurchaseRequestNote = () => {
 
         if(priority && prNo){
             if(items.length > 0){
-                prnService.createPrn({requested_by: reqBy, approved_by: authBy, priority_id: priority, remark, items, prn_no: prNo})
+                prnService.createPrn({requested_by: reqBy, approved_by: authBy, priority_id: priority, remark, items, prn_no: prnId})
                     .then(data => {
                         success('Success', 'PRN has created Successfully');
                         prnForm.resetFields();
                         setPrnItem([]);
+                        getNextid();
                     })
                     .catch(e => {
                         warning('Unexpected Error Occurred', 'Please try again');
@@ -161,8 +176,8 @@ const PurchaseRequestNote = () => {
                     <Col offset={2} span={6}>
                         <div style={{width: '100%', borderRight: 'solid', paddingRight: 15, borderColor: '#E3E1D9', paddingBottom: 5}}>
                             <Form form={prnForm} layout={'vertical'}>
-                                <Form.Item label={'PRN No.'} name={'prNo'} rules={[{required: true}]}>
-                                    <Input/>
+                                <Form.Item label={'PRN No.'} name={'prNo'}>
+                                    <Input disabled={true}/>
                                 </Form.Item>
                                 <Form.Item label={'Requested By'} name={'reqBy'}>
                                     <Select>

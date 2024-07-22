@@ -68,7 +68,7 @@ const PurchaseOrder =  () => {
     useEffect(() => {
         if(poItems.length > 0){
             const total = poItems.map((po) => {
-                return +((prnItems.find(prn => prn.prnItmId === po.prnItemId)).estimatedPricePerUnit) * +po.orderQty
+                return +((prnItems.find(prn => prn.prnItmId === po.prnItemId))?.estimatedPricePerUnit) * +po.orderQty
             })
             setGrossTotal(total.reduce((total, currentValue)=>{
                 return +currentValue + +total;

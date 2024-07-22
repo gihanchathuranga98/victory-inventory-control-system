@@ -24,6 +24,7 @@ import BatchCreation from "./pages/Production/BatchCreation";
 import FinishProducts from "./pages/Production/FinishProducts";
 import ProductCreation from "./pages/Production/ProductCreation";
 import IssueItem from "./pages/Production/IssueItem";
+import ProductCategory from "./pages/Production/ProductCategory";
 
 function App() {
 
@@ -158,6 +159,7 @@ function App() {
                       <Route Component={BatchCreation} path={'/batch-creation'}/>
                       <Route Component={FinishProducts} path={'/finish-products'}/>
                       <Route Component={ProductCreation} path={'/product-creation'}/>
+                      <Route Component={ProductCategory} path={'/product-category'}/>
                       <Route Component={IssueItem} path={'/issue-items'}/>
                     </Routes>
                   </Nav>

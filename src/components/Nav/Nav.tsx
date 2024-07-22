@@ -72,6 +72,11 @@ const Nav = ({children}:any) => {
             label: 'Production',
             children: [
                 {
+                    key: '15',
+                    icon: <AppstoreOutlined />,
+                    label: 'Product Category'
+                },
+                {
                     key: '11',
                     icon: <AppstoreOutlined />,
                     label: 'Batch Creation'
@@ -163,6 +168,10 @@ const Nav = ({children}:any) => {
 
             case 14:
                 navigate('/finish-products')
+                break;
+
+            case 15:
+                navigate('/product-category')
                 break;
 
         }

@@ -30,6 +30,15 @@ class GrnService {
         }
     }
 
+    getNextId = async (): Promise<number> => {
+        try {
+            const res = await axios.get('/grn/next/id');
+            return res.data.newId;
+        } catch (e) {
+            throw e;
+        }
+    }
+
 }
 
 export default GrnService;

@@ -2,13 +2,16 @@ import Breadcrumbs from "../../components/Breadcrumb/Breadcrumb";
 import {Button, Card, Checkbox, Col, Form, Input, Row, Select, Table} from "antd";
 import TextArea from "antd/es/input/TextArea";
 import {ProductService} from "../../services/Product.service";
-import {useEffect, useState} from "react";
+import {useContext, useEffect, useState} from "react";
 import {UomService} from "../../services/Uom.service";
 import {CustomerService} from "../../services/Customer.service";
 import RawMaterialService from "../../services/RawMaterial.service";
 import {useForm} from "antd/es/form/Form";
+import {AlertContext} from "../../context/AlertContext";
 
 const ProductCreation = () => {
+
+    const {error} = useContext(AlertContext);
 
     const [productForm] = Form.useForm();
 
@@ -140,13 +143,15 @@ const ProductCreation = () => {
             productItems: selectedRawMaterials
         }
 
-        productService.createNewProduct(payload)
-            .then(data => {
+        // productService.createNewProduct(payload)
+        //     .then(data => {
+        //
+        //     })
+        //     .catch(e => {
+        //         console.log(e)
+        //     })
 
-            })
-            .catch(e => {
-                console.log(e)
-            })
+        error('Empty Field', 'Please select the Customer');
 
     }
 

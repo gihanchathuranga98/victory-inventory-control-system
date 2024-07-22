@@ -59,4 +59,13 @@ export class PrnService {
             return Promise.reject(e);
         }
     }
+
+    getNextId = async (): Promise<number> => {
+        try {
+            const res = await axios.get('/prn/next/id');
+            return res.data.newId;
+        } catch (e) {
+          throw e;
+        }
+    }
 }
